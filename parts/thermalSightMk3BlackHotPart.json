@@ -1,0 +1,75 @@
+{
+  "v": "0.0",
+  "guid": "ae0c73ac-6831-5c43-abf4-118b5352914d",
+  "name": "thermalSightMk3BlackHot",
+  "tags": [
+    "gunner",
+    "scope",
+    "cannon"
+  ],
+  "components": [
+    {
+      "fileID": "thermalSightMk3BlackHot",
+      "type": "sight",
+      "info": {
+        "v": "0.0",
+        "objectiveLensPosition": [
+          0.0,
+          0.0,
+          0.0409
+        ],
+        "eyepiecePosition": [
+          0.0,
+          0.0,
+          -0.351768
+        ],
+        "modelFileID": "model"
+      }
+    },
+    {
+      "fileID": "model",
+      "type": "model",
+      "info": {
+        "v": "0.2",
+        "meshGuid": "60f759b164460a140bf65902dd96dd5c",
+        "materialGuids": [
+          "91dfa45c1494952458353d309cfa9aa9"
+        ],
+        "scaling": true,
+        "flipping": true,
+        "selectable": true,
+        "placementSurface": false,
+        "damageable": false
+      }
+    }
+  ],
+  "transform": {
+    "mirroring": true,
+    "duplication": true,
+    "pickup": true,
+    "snapToCentre": true,
+    "autoRotate": true,
+    "airPlacement": true,
+    "translation": true,
+    "rotation": true,
+    "scaling": true,
+    "dynamic": false,
+    "placementMode": "forwards",
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "maxScale": [
+      3.0,
+      3.0,
+      3.0
+    ],
+    "minScale": [
+      0.25,
+      0.25,
+      0.25
+    ],
+    "objects": []
+  }
+}

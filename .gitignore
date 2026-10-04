@@ -1,0 +1,10 @@
+bin/
+obj/
+**/bin/
+**/obj/
+backups/
+*.dll
+*.pdb
+*.log
+*.blueprint
+*.backup-*

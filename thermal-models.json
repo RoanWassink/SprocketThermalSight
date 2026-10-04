@@ -141,5 +141,6 @@
       ],
       "backgroundGamma": 0.6
     }
-  ]
+  ],
+  "defaultProfileId": "thermalSightModel3"
 }

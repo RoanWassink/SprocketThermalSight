@@ -12,14 +12,16 @@ $catalogSource = Join-Path $PSScriptRoot 'thermal-models.json'
 $catalog = Get-Content -LiteralPath $catalogSource -Raw | ConvertFrom-Json
 if ($catalog.version -ne 1 -or $catalog.models.Count -eq 0) { throw 'Ongeldige catalogus.' }
 $copies = @(@{ Source=$dll; Target=(Join-Path $pluginDir 'SprocketThermalSight.dll') })
-foreach ($model in $catalog.models) {
-    $id = $model.componentId
+$iconSource = Join-Path $PSScriptRoot 'assets\thermal-sight-icon.png'
+if (!(Test-Path -LiteralPath $iconSource)) { throw 'Thermal sight-icoon ontbreekt.' }
+$copies += @{ Source=$iconSource; Target=(Join-Path $pluginDir 'assets\thermal-sight-icon.png') }
+foreach ($id in @('thermalSight','thermalSightModel1','thermalSightModel2','thermalSightModel3','thermalSightMk3WhiteHot','thermalSightMk3BlackHot')) {
     if ($id -notmatch '^[a-zA-Z0-9_-]+$') { throw 'Ongeldige modelnaam.' }
     $part = Join-Path $PSScriptRoot "parts\${id}Part.json"
     $name = Join-Path $PSScriptRoot "parts\${id}.xml"
     if (!(Test-Path -LiteralPath $part) -or !(Test-Path -LiteralPath $name)) { throw "Partbestanden ontbreken: $id" }
     $definition = Get-Content -LiteralPath $part -Raw | ConvertFrom-Json
-    if ($definition.guid -ne $model.partGuid -or $definition.components[0].fileID -ne $id) { throw "Part/profiel-identiteit komt niet overeen: $id" }
+    if ($definition.components[0].fileID -ne $id) { throw "Part-identiteit komt niet overeen: $id" }
     $copies += @{ Source=$part; Target=(Join-Path $gamePath "Sprocket_Data\StreamingAssets\Parts\${id}Part.json") }
     $copies += @{ Source=$name; Target=(Join-Path $gamePath "Sprocket_Data\StreamingAssets\Localization\en-UK\Parts\${id}.xml") }
 }
@@ -30,6 +32,10 @@ else {
     $existingCatalog = Get-Content -LiteralPath $catalogTarget -Raw | ConvertFrom-Json
     if ($existingCatalog.version -ne 1 -or !$existingCatalog.models) { throw 'Bestaande catalogus is ongeldig; herstel die eerst.' }
     $added = $false
+    if (!$existingCatalog.PSObject.Properties['defaultProfileId']) {
+        $existingCatalog | Add-Member -MemberType NoteProperty -Name defaultProfileId -Value $catalog.defaultProfileId
+        $added = $true
+    }
     foreach ($model in $catalog.models) {
         $existing = $existingCatalog.models | Where-Object componentId -eq $model.componentId | Select-Object -First 1
         if ($existing -and $existing.partGuid -ne $model.partGuid) { throw 'Part-GUID-conflict met bestaande catalogus.' }
@@ -73,4 +79,4 @@ foreach ($item in $copies) {
 }
 "Prototype geïnstalleerd: $pluginDir"
 "Bestaande profielen zijn behouden. Back-up: $backup"
-"Gebruik Thermal sight model 1, 2 of 3; verwijder of deactiveer Teplovizor apart om twee N-hooks te voorkomen."
+"Gebruik Thermal sight; rechtsklik de geplaatste sight en kies Profile. Oude parts blijven laadbaar maar zijn verborgen in de keuzelijst."

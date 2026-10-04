@@ -51,4 +51,7 @@ Check(terrain[0] > 30, "dark terrain remains visible at Mk3 contrast");
 Check(terrain[50 * 4] - terrain[0] > 15, "faint terrain differences survive contrast");
 var terrainHot = SensorProcessor.Process(darkScene, mask, p, 1);
 Check(terrainHot[50 * 4] > terrain[50 * 4] + 50, "vehicle remains distinct from lifted terrain");
+Check(catalog.Resolve(null).ComponentId == catalog.DefaultProfileId, "JSON default");
+Check(catalog.Resolve("thermalSightMk3BlackHot").Palette == "blackHot", "saved selection");
+Check(catalog.Resolve("missing").ComponentId == catalog.DefaultProfileId, "missing profile fallback");
 Console.WriteLine($"PASS: {checks} sensor/profile checks; native rendering, part loading and mass/cost require gameplay validation.");

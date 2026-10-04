@@ -18,11 +18,12 @@ using NativeScope = Sprocket.Vehicles.Weapons.Scope;
 
 namespace SprocketThermalSight;
 
-[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.1.5")]
+[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.1")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
     private Harmony? harmony;
+    private Harmony? iconHarmony;
     public override void Load()
     {
         Instance = this;
@@ -31,13 +32,21 @@ public sealed class Plugin : BasePlugin
             Runtime.Configure(Config);
             harmony = new Harmony("nl.roan.sprocket.thermalsight");
             harmony.PatchAll(typeof(Hooks));
+            harmony.PatchAll(typeof(ProfileStateHooks));
             AddComponent<ThermalDriver>();
-            Log.LogInfo("Thermal sight v0.1.5 prototype loaded; separate palette sight parts and terrain shadow detail enabled.");
+            Log.LogInfo("Thermal sight v0.2.1 loaded; per-sight JSON profile selection supported.");
         }
-        catch (Exception ex) { harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); }
+        catch (Exception ex) { harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); return; }
+        try
+        {
+            iconHarmony = new Harmony("nl.roan.sprocket.thermalsight.icon");
+            iconHarmony.PatchAll(typeof(IconHooks));
+            iconHarmony.PatchAll(typeof(ProfileInspector));
+        }
+        catch (Exception ex) { iconHarmony?.UnpatchSelf(); Log.LogWarning("Optional thermal icon hook disabled: " + ex.Message); }
     }
     public override bool Unload()
-    { Runtime.Shutdown(); harmony?.UnpatchSelf(); return true; }
+    { Runtime.Shutdown(); iconHarmony?.UnpatchSelf(); IconHooks.Cleanup(); harmony?.UnpatchSelf(); return true; }
 }
 
 public sealed class ThermalDriver : MonoBehaviour
@@ -53,6 +62,14 @@ internal static class Runtime
     private static ConfigEntry<Key> toggle = null!, reload = null!;
     private static ConfigEntry<bool> enabled = null!;
     private static Dictionary<string, ThermalProfile> models = new(StringComparer.Ordinal);
+    private static string defaultProfileId = "thermalSightModel3";
+    internal const string ConfigurableId = "thermalSight";
+    internal const string ConfigurableGuid = "c9f96b83-cd58-47d1-999b-83c5e71a981f";
+    private static readonly HashSet<string> legacyIds = new(StringComparer.Ordinal) { "thermalSightModel1", "thermalSightModel2", "thermalSightModel3", "thermalSightMk3WhiteHot", "thermalSightMk3BlackHot" };
+    private static readonly HashSet<string> legacyGuids = new(StringComparer.OrdinalIgnoreCase) { "e1e0a2bf-5316-416a-b45e-b8e70b21a151", "40b644a7-90ed-47c7-b78f-e2f7310b80a2", "39614761-b743-408d-b112-9d4c24673c03", "37d49a2d-57ab-598a-8622-e909c48b2ad9", "ae0c73ac-6831-5c43-abf4-118b5352914d" };
+    internal static IReadOnlyList<ThermalProfile> Profiles => models.Values.ToArray();
+    internal static bool IsThermal(VehicleComponent component) => component != null && component.TryCast<GunnerSight>() != null && (component.ComponentID == ConfigurableId || legacyIds.Contains(component.ComponentID));
+    internal static bool IsLegacyGuid(string guid) => legacyGuids.Contains(guid);
     private static string catalogPath = "";
     private static bool active, inputAllowed, stopped;
     private static int playerFrame = -100, scopeFrame = -100, inputFrame = -1;
@@ -85,7 +102,7 @@ internal static class Runtime
     {
         var catalog = ThermalCatalog.Read(catalogPath);
         var next = catalog.Models.ToDictionary(p => p.ComponentId, StringComparer.Ordinal);
-        models = next; Deactivate(); selected = null;
+        models = next; defaultProfileId = catalog.DefaultProfileId; Deactivate(); selected = null;
         Plugin.Instance.Log.LogInfo($"[Thermal] Accepted {models.Count} part profiles.");
     }
     internal static bool FindProfile(VehicleComponent component, out ThermalProfile p)
@@ -93,8 +110,14 @@ internal static class Runtime
         p = null!;
         // Component IDs are deliberately unique fileIDs on the supplied standalone parts.
         // VehicleObject.GUID identifies a placed object and is NOT the asset GUID.
-        return component != null && component.TryCast<GunnerSight>() != null && models.TryGetValue(component.ComponentID, out p!);
+        if (!IsThermal(component)) return false;
+        var requested = ProfileStateHooks.Selection(component);
+        var id = requested ?? (component.ComponentID == ConfigurableId ? defaultProfileId : component.ComponentID);
+        if (models.TryGetValue(id, out p!)) return true;
+        Warn($"Saved profile '{id}' is missing; using '{defaultProfileId}' until restored or changed in the inspector.");
+        return models.TryGetValue(defaultProfileId, out p!);
     }
+    internal static bool OwnsPartGuid(string guid) => string.Equals(guid, ConfigurableGuid, StringComparison.OrdinalIgnoreCase) || IsLegacyGuid(guid);
     internal static void PlayerInput(PlayerController controller, GameTime time, Camera view)
     {
         if (stopped) return;

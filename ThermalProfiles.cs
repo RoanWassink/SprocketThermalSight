@@ -6,7 +6,11 @@ namespace SprocketThermalSight;
 public sealed class ThermalCatalog
 {
     public int Version { get; set; } = 1;
+    public string DefaultProfileId { get; set; } = "thermalSightModel3";
     public List<ThermalProfile> Models { get; set; } = new();
+    public ThermalProfile Resolve(string? selectedId, string? legacyId = null) =>
+        Models.FirstOrDefault(p => p.ComponentId == (selectedId ?? legacyId ?? DefaultProfileId))
+        ?? Models.First(p => p.ComponentId == DefaultProfileId);
     public void Validate()
     {
         if (Version != 1 || Models.Count == 0) throw new InvalidDataException("Unsupported or empty thermal catalog.");
@@ -15,9 +19,10 @@ public sealed class ThermalCatalog
         foreach (var model in Models)
         {
             model.Validate();
-            if (!ids.Add(model.ComponentId) || !guids.Add(Guid.Parse(model.PartGuid)))
+            if (!ids.Add(model.ComponentId) || (!string.IsNullOrEmpty(model.PartGuid) && !guids.Add(Guid.Parse(model.PartGuid))))
                 throw new InvalidDataException("Duplicate thermal part GUID/component ID.");
         }
+        if (!ids.Contains(DefaultProfileId)) throw new InvalidDataException("defaultProfileId must refer to an existing profile componentId.");
     }
     public static ThermalCatalog Read(string path)
     {
@@ -65,8 +70,8 @@ public sealed class ThermalProfile
 
     public void Validate()
     {
-        if (!Guid.TryParse(PartGuid, out _) || string.IsNullOrWhiteSpace(ComponentId) || string.IsNullOrWhiteSpace(DisplayName))
-            throw new InvalidDataException("Model requires partGuid, componentId and displayName.");
+        if ((!string.IsNullOrWhiteSpace(PartGuid) && !Guid.TryParse(PartGuid, out _)) || string.IsNullOrWhiteSpace(ComponentId) || string.IsNullOrWhiteSpace(DisplayName))
+            throw new InvalidDataException("Profile requires componentId and displayName; optional legacy partGuid must be a GUID.");
         if (Width < 80 || Width > 1024 || Height < 60 || Height > 768 || Width * Height > 524288)
             throw new InvalidDataException("Sensor resolution outside 80x60..1024x768; maximum 524288 pixels.");
         Range(RefreshHz, 1, 60, nameof(RefreshHz)); Range(Contrast, .1f, 5, nameof(Contrast));

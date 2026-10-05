@@ -1,5 +1,7 @@
 # Sprocket ThermalSight
 
+**Required dependency: [Sprocket Keybinds API 0.1.5](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.5). Hydropneumatic, Telescopic Mast, Thermal Sight and Smoke Launchers will not load without it. The full pack includes it: keep its DLL installed. For separate plugin downloads, install the API ZIP once, merging its BepInEx folder into your game folder.**
+
 One configurable thermal sight with selectable, saved profiles and monochrome thermal display.
 
 **v0.2.4 — beta.** Controls use the shared Mod keybinds menu and the rendering repair is retained. Thermal operation and placement are limited to Cold War; an imported earlier-era sight keeps its saved profile and physical mass/cost but uses normal sight view.

@@ -76,7 +76,21 @@ var odd = BufferLayout.Resolve(1919, 1079, 959, 539, true);
 Check(Math.Abs(odd.ScaleX * 1919 - 959) < .001f && Math.Abs(odd.ScaleY * 1079 - 539) < .001f, "odd/asymmetric dimensions preserve sample footprint");
 Reject(() => BufferLayout.Resolve(0, 1080, 960, 540, true), "reject uninitialized render surface");
 Console.WriteLine($"PASS: {checks} checks including DRS layouts; native DRS visuals remain unvalidated.");
-Check(ThermalEraPolicy.Allows("Coldwar"), "native Coldwar era available");
-foreach (var earlier in new string?[] { null, "", "WWI", "Interwar", "Earlywar", "Midwar", "Latewar", "unknown" })
-    Check(!ThermalEraPolicy.Allows(earlier), "earlier/unknown era fails closed");
-Console.WriteLine($"PASS: {checks} checks; native era/date transitions and UI need live validation.");
+var vanilla = new[] { new DateTime(1900,1,1), new DateTime(1918,1,1), new DateTime(1940,1,1), new DateTime(1945,9,3) };
+Check(!ThermalEraPolicy.Allows(new DateTime(1945,9,2), vanilla), "WWII final day excluded");
+Check(ThermalEraPolicy.Allows(new DateTime(1945,9,3), vanilla), "first postwar day inclusive");
+Check(ThermalEraPolicy.Allows(new DateTime(1960,1,1), vanilla), "finite vanilla postwar");
+Check(ThermalEraPolicy.Allows(DateTime.MaxValue, vanilla), "vanilla final-era sentinel");
+var custom = new[] { new DateTime(1900,1,1), new DateTime(1945,9,3), new DateTime(1992,1,1), new DateTime(2050,1,1) };
+foreach (var date in new[] { new DateTime(1945,9,3), new DateTime(1992,1,1), new DateTime(2050,1,1), new DateTime(2400,1,1), new DateTime(9999,12,30) })
+    Check(ThermalEraPolicy.Allows(date, custom), "custom postwar/modern/future has no arbitrary upper horizon");
+Check(ThermalEraPolicy.Allows(DateTime.MaxValue, custom), "custom future final-era sentinel, no name lookup");
+var earlyOnly = new[] { new DateTime(1900,1,1), new DateTime(1939,9,1) };
+Check(!ThermalEraPolicy.Allows(DateTime.MaxValue, earlyOnly), "ambiguous final prewar era sentinel fails closed");
+Check(!ThermalEraPolicy.Allows(new DateTime(1944,6,1), custom), "date excludes earlier custom era regardless label");
+Check(!ThermalEraPolicy.Allows(null, custom), "missing owner date fails closed");
+Check(!ThermalEraPolicy.Allows(new DateTime(1950,1,1), Array.Empty<DateTime>()), "missing era metadata fails closed");
+Check(!ThermalEraPolicy.Allows(new DateTime(1950,1,1), new[] {new DateTime(1945,9,3),new DateTime(1900,1,1)}), "unordered eras fail closed");
+Check(!ThermalEraPolicy.Allows(DateTime.MaxValue, new[] {DateTime.MaxValue.Date}), "sentinel is not valid era start");
+Check(!ThermalEraPolicy.Allows(new DateTime(1945,9,3), new[] {new DateTime(2000,1,1)}), "date before first registered era fails closed");
+Console.WriteLine($"PASS: {checks} checks including postwar windows; native imports/save-load and custom-era visuals need live validation.");

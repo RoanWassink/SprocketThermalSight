@@ -19,7 +19,7 @@ using NativeScope = Sprocket.Vehicles.Weapons.Scope;
 
 namespace SprocketThermalSight;
 
-[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.4")]
+[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.5")]
 [BepInDependency(Keybinds.PluginGuid, ">=0.1.3 <0.2.0")]
 public sealed class Plugin : BasePlugin
 {
@@ -36,7 +36,7 @@ public sealed class Plugin : BasePlugin
             harmony.PatchAll(typeof(Hooks));
             harmony.PatchAll(typeof(ProfileStateHooks));
             AddComponent<ThermalDriver>();
-            Log.LogInfo("Thermal sight v0.2.4 loaded; shared Settings keybinds and dynamic-resolution rendering supported.");
+            Log.LogInfo("Thermal sight v0.2.5 loaded; shared Settings keybinds and dynamic-resolution rendering supported.");
         }
         catch (Exception ex) { Runtime.Shutdown(); Runtime.ReleaseBindings(); harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); return; }
         try
@@ -314,6 +314,7 @@ internal static class Hooks
     private static void Cost(VehicleComponent __instance, MassType __0, CostType __1, ref float __result)
     { if ((__0 & MassType.Mechanisms) != 0 && (__1 & CostType.Assembly) != 0 && Runtime.FindProfile(__instance, out var p)) __result += p.ExtraAssemblyCost; }
 }
+
 
 
 

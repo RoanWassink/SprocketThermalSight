@@ -78,7 +78,7 @@ internal static class ProfileInspector
             if (ui == null) return;
             if (!ThermalEraAccess.Allowed(sight))
             {
-                ui.InfoField("Thermal is available only in Cold War; saved profile retained, normal sight active.", 2);
+                ui.InfoField("Thermal available from 1945-09-03; saved profile retained, normal sight active.", 2);
                 return;
             }
             var profiles = Runtime.Profiles.ToArray();
@@ -115,6 +115,7 @@ internal static class ProfileInspector
         __result = new(__result.Where(card => card?.TryCast<Sprocket.PartImporting.PartDisplayCard>() is not {} part || !Runtime.IsLegacyGuid(part.PartGuid)).ToArray());
     }
 }
+
 
 
 

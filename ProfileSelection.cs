@@ -17,6 +17,7 @@ internal static class ProfileStateHooks
     internal static string? Selection(VehicleComponent component) => Choices.TryGetValue(component.Pointer, out var choice) ? choice.Id : null;
     internal static void Select(VehicleComponent component, string id)
     {
+        if (!ThermalEraAccess.Allowed(component)) return;
         Choices[component.Pointer] = new(component, id);
         component.RequestRebuild();
         Runtime.Deactivate();
@@ -75,6 +76,11 @@ internal static class ProfileInspector
             if (sight == null || !Runtime.FindProfile(sight, out var current)) return;
             var ui = __0.TryCast<IGUIElementDrawer>();
             if (ui == null) return;
+            if (!ThermalEraAccess.Allowed(sight))
+            {
+                ui.InfoField("Thermal is available only in Cold War; saved profile retained, normal sight active.", 2);
+                return;
+            }
             var profiles = Runtime.Profiles.ToArray();
             var labels = new Il2CppSystem.Collections.Generic.List<string>();
             foreach (var p in profiles) labels.Add(p.DisplayName);
@@ -96,7 +102,7 @@ internal static class ProfileInspector
                     }))!, "Saved separately on this sight. Profiles come from thermal-models.json.");
                 ui.InfoField($"{current.Width} x {current.Height} | {current.RefreshHz:0.#} Hz | {current.Palette}", 2);
                 ui.InfoField($"Electronics: +{current.ExtraMassKg:0.#} kg | +{current.ExtraAssemblyCost:0.#} assembly cost", 2);
-                ui.InfoField("Press N while using this sight to toggle thermal", 2);
+                ui.InfoField("Controls: Settings / keybinds - Thermal / Toggle", 2);
             }
             finally { __0.EndAllDropdowns(); }
         }
@@ -109,3 +115,6 @@ internal static class ProfileInspector
         __result = new(__result.Where(card => card?.TryCast<Sprocket.PartImporting.PartDisplayCard>() is not {} part || !Runtime.IsLegacyGuid(part.PartGuid)).ToArray());
     }
 }
+
+
+

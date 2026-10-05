@@ -48,12 +48,14 @@ internal sealed class SensorCapture : IDisposable
         var depth = ctx.cameraDepthBuffer;
         var source = ctx.cameraColorBuffer;
         if (depth?.rt == null || source?.rt == null) throw new InvalidOperationException("Camera buffers unavailable.");
-        int width = depth.rt.width, height = depth.rt.height;
+        var depthLayout = Layout(depth);
+        var colorLayout = Layout(source);
+        int width = depthLayout.SurfaceWidth, height = depthLayout.SurfaceHeight;
         if (maskFull == null || maskFull.width != width || maskFull.height != height)
         { maskFullHandle?.Release(); if (maskFull != null) Destroy(maskFull); maskFull = Make(width, height, "Thermal depth-tested vehicle mask"); maskFullHandle = RTHandles.Alloc(maskFull, false); }
         var cmd = ctx.cmd;
-        var viewport = new Rect(0, 0, ctx.hdCamera.actualWidth, ctx.hdCamera.actualHeight);
-        var scale = new Vector2((float)ctx.hdCamera.actualWidth / source.rt.width, (float)ctx.hdCamera.actualHeight / source.rt.height);
+        var viewport = new Rect(0, 0, depthLayout.ViewportWidth, depthLayout.ViewportHeight);
+        var scale = new Vector2(colorLayout.ScaleX, colorLayout.ScaleY);
         // Equal depth uses the existing HDRP depth: no x-ray silhouettes, no changes to native materials.
         cmd.SetRenderTarget(new RenderTargetIdentifier(maskFull), depth.nameID);
         cmd.SetViewport(viewport);
@@ -67,7 +69,7 @@ internal sealed class SensorCapture : IDisposable
             else { var filter = r.GetComponent<MeshFilter>(); if (filter?.sharedMesh != null) count = filter.sharedMesh.subMeshCount; }
             for (int i = 0; i < count; i++) cmd.DrawRenderer(r, material, i, pass);
         }
-        var maskScale = new Vector2((float)ctx.hdCamera.actualWidth / width, (float)ctx.hdCamera.actualHeight / height);
+        var maskScale = new Vector2(depthLayout.ScaleX, depthLayout.ScaleY);
         cmd.SetRenderTarget(maskSmallHandle.nameID);
         cmd.SetViewport(new Rect(0, 0, profile.Width, profile.Height));
         CopyTexture(cmd, maskFullHandle!, new Vector4(maskScale.x, maskScale.y, 0, 0), true);
@@ -80,7 +82,9 @@ internal sealed class SensorCapture : IDisposable
         cmd.RequestAsyncReadback(maskSmall, 0, TextureFormat.RGBA32,
             DelegateSupport.ConvertDelegate<Il2CppSystem.Action<AsyncGPUReadbackRequest>>(new Action<AsyncGPUReadbackRequest>(r => Complete(r, true))));
         cmd.SetRenderTarget(source.nameID, depth.nameID);
-        cmd.SetViewport(viewport);
+        cmd.SetViewport(new Rect(0, 0, colorLayout.ViewportWidth, colorLayout.ViewportHeight));
+        ReportLayout("Capture color", ctx.hdCamera, source, colorLayout);
+        ReportLayout("Capture depth", ctx.hdCamera, depth, depthLayout);
     }
     private void Complete(AsyncGPUReadbackRequest request, bool mask)
     {
@@ -131,8 +135,10 @@ internal sealed class SensorCapture : IDisposable
         // Keep the native handle, format and texture dimension. Upload is explicitly 2D;
         // HDRP's generic blitter can select an array sampler even for a 2D upload texture.
         cmd.SetRenderTarget(source.nameID);
-        cmd.SetViewport(new Rect(0, 0, camera.actualWidth, camera.actualHeight));
+        var layout = Layout(source);
+        cmd.SetViewport(new Rect(0, 0, layout.ViewportWidth, layout.ViewportHeight));
         Blitter.BlitTexture2D(cmd, uploadHandle, new Vector4(1, 1, 0, 0), 0, profile.SmoothPixels);
+        ReportLayout("Scope upload", camera, source, layout);
         if (!scopeReported)
         {
             scopeReported = true;
@@ -141,6 +147,31 @@ internal sealed class SensorCapture : IDisposable
         return source;
     }
     private bool scopeReported;
+    private static BufferLayout Layout(RTHandle handle)
+    {
+        var rt = handle.rt ?? throw new InvalidOperationException("Render texture missing.");
+        var effective = new Vector2Int(rt.width, rt.height);
+        var dynamic = DynamicResolutionHandler.instance;
+        if (rt.useDynamicScale && dynamic.HardwareDynamicResIsEnabled())
+            effective = dynamic.GetScaledSize(effective);
+        var viewport = handle.useScaling ? handle.GetScaledSize(handle.rtHandleProperties.currentViewportSize) : effective;
+        return BufferLayout.Resolve(effective.x, effective.y, viewport.x, viewport.y, handle.useScaling);
+    }
+    private readonly Dictionary<string, string> lastLayouts = new();
+    private readonly Dictionary<string, float> layoutLogAt = new();
+    private int layoutReports;
+    private void ReportLayout(string stage, HDCamera camera, RTHandle handle, BufferLayout layout)
+    {
+        if (layoutReports >= 36) return;
+        var properties = handle.rtHandleProperties;
+        var rt = handle.rt!;
+        var key = $"allocated={rt.width}x{rt.height}, effective={layout.SurfaceWidth}x{layout.SurfaceHeight}, viewport={layout.ViewportWidth}x{layout.ViewportHeight}, useScaling={handle.useScaling}, hwTexture={rt.useDynamicScale}, actual={camera.actualWidth}x{camera.actualHeight}";
+        if (lastLayouts.TryGetValue(stage, out var previous) && key == previous) return;
+        if (layoutLogAt.TryGetValue(stage, out var at) && Time.unscaledTime < at) return;
+        lastLayouts[stage] = key; layoutLogAt[stage] = Time.unscaledTime + 2; layoutReports++;
+        var dynamic = DynamicResolutionHandler.instance;
+        Plugin.Instance.Log.LogInfo($"[Thermal] {stage}: {key}; handleViewport={properties.currentViewportSize}, handleTarget={properties.currentRenderTargetSize}, handleScale={properties.rtHandleScale}, uvScale={layout.ScaleX:F4},{layout.ScaleY:F4}, postProcess={camera.postProcessScreenSize}, final={camera.finalViewport}, hardwareDRS={dynamic.HardwareDynamicResIsEnabled()}, softwareDRS={dynamic.SoftwareDynamicResIsEnabled()}, dimension={rt.dimension}, format={rt.graphicsFormat}");
+    }
     private static void CopyTexture(CommandBuffer cmd, RTHandle source, Vector4 scaleBias, bool bilinear)
     {
         var dimension = source.rt?.dimension ?? TextureDimension.Tex2D;
@@ -167,3 +198,8 @@ internal sealed class SensorCapture : IDisposable
         UnityEngine.Object.Destroy(upload);
     }
 }
+
+
+
+
+

@@ -1,5 +1,6 @@
 using BepInEx;
 using BepInEx.Configuration;
+using SprocketKeybinds;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
@@ -18,7 +19,8 @@ using NativeScope = Sprocket.Vehicles.Weapons.Scope;
 
 namespace SprocketThermalSight;
 
-[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.1")]
+[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.4")]
+[BepInDependency(Keybinds.PluginGuid, ">=0.1.3 <0.2.0")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
@@ -34,9 +36,9 @@ public sealed class Plugin : BasePlugin
             harmony.PatchAll(typeof(Hooks));
             harmony.PatchAll(typeof(ProfileStateHooks));
             AddComponent<ThermalDriver>();
-            Log.LogInfo("Thermal sight v0.2.1 loaded; per-sight JSON profile selection supported.");
+            Log.LogInfo("Thermal sight v0.2.4 loaded; shared Settings keybinds and dynamic-resolution rendering supported.");
         }
-        catch (Exception ex) { harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); return; }
+        catch (Exception ex) { Runtime.Shutdown(); Runtime.ReleaseBindings(); harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); return; }
         try
         {
             iconHarmony = new Harmony("nl.roan.sprocket.thermalsight.icon");
@@ -46,7 +48,7 @@ public sealed class Plugin : BasePlugin
         catch (Exception ex) { iconHarmony?.UnpatchSelf(); Log.LogWarning("Optional thermal icon hook disabled: " + ex.Message); }
     }
     public override bool Unload()
-    { Runtime.Shutdown(); iconHarmony?.UnpatchSelf(); IconHooks.Cleanup(); harmony?.UnpatchSelf(); return true; }
+    { Runtime.Shutdown(); Runtime.ReleaseBindings(); iconHarmony?.UnpatchSelf(); IconHooks.Cleanup(); harmony?.UnpatchSelf(); return true; }
 }
 
 public sealed class ThermalDriver : MonoBehaviour
@@ -60,6 +62,8 @@ public sealed class ThermalDriver : MonoBehaviour
 internal static class Runtime
 {
     private static ConfigEntry<Key> toggle = null!, reload = null!;
+    private static ModKeybind? toggleBinding, reloadBinding;
+    private static bool legacyKeysImported;
     private static ConfigEntry<bool> enabled = null!;
     private static Dictionary<string, ThermalProfile> models = new(StringComparer.Ordinal);
     private static string defaultProfileId = "thermalSightModel3";
@@ -74,6 +78,7 @@ internal static class Runtime
     private static bool active, inputAllowed, stopped;
     private static int playerFrame = -100, scopeFrame = -100, inputFrame = -1;
     private static IntPtr sightId;
+    private static GunnerSight? activeSight;
     private static Camera? camera;
     private static PlayerController? player;
     private static GameTime? gameTime;
@@ -93,10 +98,24 @@ internal static class Runtime
     internal static void Configure(ConfigFile config)
     {
         enabled = config.Bind("General", "Enabled", true, "Enable thermal only on recognized thermal sight parts.");
-        toggle = config.Bind("Keys", "Toggle", Key.N, "Toggle the currently controlled thermal sight.");
-        reload = config.Bind("Keys", "ReloadProfiles", Key.F8, "Reload thermal-models.json; invalid changes keep the last accepted catalog.");
+        toggle = config.Bind("Keys", "Toggle", Key.N, "Legacy import only; edit Thermal / Toggle in Settings / keybinds.");
+        reload = config.Bind("Keys", "ReloadProfiles", Key.F8, "Legacy import only; edit Thermal / Reload profiles in Settings / keybinds. Invalid profiles keep the last accepted catalog.");
         catalogPath = Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!, "thermal-models.json");
         Reload(); stopped = false;
+        toggleBinding = Keybinds.RegisterButton("nl.roan.sprocket.thermalsight", "Thermal", "toggle", "Toggle", "<Keyboard>/n");
+        reloadBinding = Keybinds.RegisterButton("nl.roan.sprocket.thermalsight", "Thermal", "reload-profiles", "Reload profiles", "<Keyboard>/f8");
+        legacyKeysImported = false;
+        TryImportLegacyKeys();
+    }
+    private static void TryImportLegacyKeys()
+    {
+        if (legacyKeysImported || Keybinds.IsConfiguring) return;
+        var keyboard = Keyboard.current;
+        if (keyboard == null && (toggle.Value != Key.None || reload.Value != Key.None)) return;
+        Keybinds.TryImportLegacyBinding(toggleBinding!, toggle.Value == Key.None ? "" : "<Keyboard>/" + keyboard![toggle.Value].name);
+        Keybinds.TryImportLegacyBinding(reloadBinding!, reload.Value == Key.None ? "" : "<Keyboard>/" + keyboard![reload.Value].name);
+        legacyKeysImported = true;
+        Plugin.Instance.Log.LogInfo("[Thermal] Shared keybinds ready; existing API choices preserved, legacy CFG keys imported only on first use.");
     }
     private static void Reload()
     {
@@ -135,7 +154,8 @@ internal static class Runtime
         ThermalProfile? next = null;
         // The native controller already decides whether a sight is usable. Non-damageable
         // optical components need not have a positive HealthFraction.
-        if (sight != null && FindProfile(sight, out var p)) next = p;
+        activeSight = sight;
+        if (sight != null && ThermalEraAccess.Allowed(sight) && FindProfile(sight, out var p)) next = p;
         scopeDescription = $"scoped={controller.Scoped}, hasActive={controller.HasActive}, component={sight?.ComponentID ?? "none"}, health={sight?.HealthFraction.ToString() ?? "n/a"}, profile={next?.DisplayName ?? "none"}";
         IntPtr identity = sight?.Pointer ?? IntPtr.Zero;
         if (identity != sightId || !ReferenceEquals(next, selected))
@@ -148,6 +168,7 @@ internal static class Runtime
             if (!retired[i].Pending) { retired[i].Dispose(); retired.RemoveAt(i); }
         if (stopped) return;
         if (!driverReported) { driverReported = true; Plugin.Instance.Log.LogInfo("[Thermal] Sensor driver ticking."); }
+        TryImportLegacyKeys();
         bool inCombat = false;
         for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
             if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == "VehicleControlUI") { inCombat = true; break; }
@@ -165,21 +186,20 @@ internal static class Runtime
         inputAllowed = inCombat && Application.isFocused && gameTime != null && gameTime.PauseState == PauseState.Unpaused && gameTime.TimeScale > 0 && gameTime.DeltaTime > 0;
         var focused = EventSystem.current?.currentSelectedGameObject;
         if (focused != null && ((focused.GetComponent<TMP_InputField>()?.isFocused ?? false) || (focused.GetComponent<UnityEngine.UI.InputField>()?.isFocused ?? false))) inputAllowed = false;
-        var keyboard = Keyboard.current;
-        bool pressed = keyboard != null && toggle.Value != Key.None && keyboard[toggle.Value].wasPressedThisFrame && inputFrame != Time.frameCount;
+        bool pressed = toggleBinding!.WasPressedThisFrame && inputFrame != Time.frameCount;
         if (pressed)
             Plugin.Instance.Log.LogInfo($"[Thermal] Toggle pressed: enabled={enabled.Value}, combat={inCombat}, inputAllowed={inputAllowed}, gameClock={gameTime != null}, playerHookAge={Time.frameCount-playerFrame}, scopeAge={Time.frameCount-scopeFrame}, camera={camera?.name ?? "none"}; {scopeDescription}");
         if (!enabled.Value || !Application.isFocused || !inCombat || Time.frameCount - scopeFrame > 1 || selected == null || camera == null)
         { Deactivate(); return; }
-        if (inputAllowed && keyboard != null && inputFrame != Time.frameCount)
+        if (inputAllowed && inputFrame != Time.frameCount)
         {
             inputFrame = Time.frameCount;
-            if (reload.Value != Key.None && keyboard[reload.Value].wasPressedThisFrame)
+            if (reloadBinding!.WasPressedThisFrame)
             {
                 try { Reload(); } catch (Exception ex) { Warn("Profile reload rejected; previous catalog retained: " + ex.Message); }
                 return;
             }
-            if (toggle.Value != Key.None && keyboard[toggle.Value].wasPressedThisFrame)
+            if (toggleBinding!.WasPressedThisFrame)
             {
                 if (active) Deactivate(); else Activate();
             }
@@ -188,7 +208,7 @@ internal static class Runtime
     }
     private static void Activate()
     {
-        if (selected == null || camera == null) return;
+        if (selected == null || camera == null || !ThermalEraAccess.Allowed(activeSight)) return;
         if (!SystemInfo.supportsAsyncGPUReadback) throw new NotSupportedException("GPU does not support asynchronous sensor capture.");
         if (heatMaterial == null)
         {
@@ -229,6 +249,7 @@ internal static class Runtime
     }
     internal static void Render(DrawRenderersCustomPass instance, CustomPassContext ctx)
     {
+        if (!ThermalEraAccess.Allowed(activeSight)) { Deactivate(); return; }
         if (!active || pass == null || instance.Pointer != pass.Pointer || sensor == null || selected == null || camera == null || !inputAllowed) return;
         if (ctx.hdCamera.camera.GetInstanceID() != camera.GetInstanceID()) return;
         if (ctx.hdCamera.viewCount != 1 || ctx.hdCamera.msaaEnabled)
@@ -252,11 +273,17 @@ internal static class Runtime
     }
     internal static void ReplaceScopeSource(CommandBuffer cmd, HDCamera hdCamera, ref RTHandle source)
     {
+        if (!ThermalEraAccess.Allowed(activeSight)) { Deactivate(); return; }
         if (active && inputAllowed && sensor?.HasImage == true && camera != null && hdCamera.camera.GetInstanceID() == camera.GetInstanceID()) source = sensor.ScopeImage(cmd, hdCamera, source);
     }
     internal static void Fail(Exception ex) { Deactivate(); Warn(ex.GetType().Name + ": " + ex.Message); }
     internal static void Warn(string message)
     { if (warnings.Add(message)) Plugin.Instance.Log.LogWarning("[Thermal] " + message); }
+    internal static void ReleaseBindings()
+    {
+        if (toggleBinding != null) { Keybinds.Unregister("nl.roan.sprocket.thermalsight", "toggle"); toggleBinding = null; }
+        if (reloadBinding != null) { Keybinds.Unregister("nl.roan.sprocket.thermalsight", "reload-profiles"); reloadBinding = null; }
+    }
     internal static void Shutdown()
     {
         if (stopped) return;
@@ -287,3 +314,11 @@ internal static class Hooks
     private static void Cost(VehicleComponent __instance, MassType __0, CostType __1, ref float __result)
     { if ((__0 & MassType.Mechanisms) != 0 && (__1 & CostType.Assembly) != 0 && Runtime.FindProfile(__instance, out var p)) __result += p.ExtraAssemblyCost; }
 }
+
+
+
+
+
+
+
+

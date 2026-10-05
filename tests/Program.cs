@@ -55,3 +55,28 @@ Check(catalog.Resolve(null).ComponentId == catalog.DefaultProfileId, "JSON defau
 Check(catalog.Resolve("thermalSightMk3BlackHot").Palette == "blackHot", "saved selection");
 Check(catalog.Resolve("missing").ComponentId == catalog.DefaultProfileId, "missing profile fallback");
 Console.WriteLine($"PASS: {checks} sensor/profile checks; native rendering, part loading and mass/cost require gameplay validation.");
+
+
+// Before post processing, software DRS occupies only part of an oversized buffer.
+var low = BufferLayout.Resolve(1920, 1080, 960, 540, true);
+Check(low.ScaleX == .5f && low.ScaleY == .5f, "low resolution capture reads valid region");
+// After upscaling, scope source is full resolution even while camera.actualWidth is 960.
+var final = BufferLayout.Resolve(1920, 1080, 960, 540, false);
+Check(final.ViewportWidth == 1920 && final.ViewportHeight == 1080, "fixed post-upscale scope fills entire source");
+var upscaled = BufferLayout.Resolve(1920, 1080, 1920, 1080, true);
+Check(upscaled.ScaleX == 1 && upscaled.ScaleY == 1, "custom upscaler handle uses its own full viewport");
+var hardware = BufferLayout.Resolve(960, 540, 960, 540, true);
+Check(hardware.ScaleX == 1 && hardware.ScaleY == 1, "hardware-scaled physical surface samples full UVs");
+foreach (int vw in new[] { 1920, 1344, 960, 1152, 1920 })
+{
+    var frame = BufferLayout.Resolve(2560, 1440, vw, vw * 9 / 16, true);
+    Check(frame.ViewportWidth == vw && Math.Abs(frame.ScaleX * 2560 - vw) < .001f, "viewport follows changing render scale without allocation resize");
+}
+var odd = BufferLayout.Resolve(1919, 1079, 959, 539, true);
+Check(Math.Abs(odd.ScaleX * 1919 - 959) < .001f && Math.Abs(odd.ScaleY * 1079 - 539) < .001f, "odd/asymmetric dimensions preserve sample footprint");
+Reject(() => BufferLayout.Resolve(0, 1080, 960, 540, true), "reject uninitialized render surface");
+Console.WriteLine($"PASS: {checks} checks including DRS layouts; native DRS visuals remain unvalidated.");
+Check(ThermalEraPolicy.Allows("Coldwar"), "native Coldwar era available");
+foreach (var earlier in new string?[] { null, "", "WWI", "Interwar", "Earlywar", "Midwar", "Latewar", "unknown" })
+    Check(!ThermalEraPolicy.Allows(earlier), "earlier/unknown era fails closed");
+Console.WriteLine($"PASS: {checks} checks; native era/date transitions and UI need live validation.");

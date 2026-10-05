@@ -10,5 +10,6 @@
     <Compile Remove="tests/**/*.cs" />
     <Reference Include="$(GameDir)\BepInEx\core\*.dll" Exclude="$(GameDir)\BepInEx\core\TerraFX*.dll;$(GameDir)\BepInEx\core\dobby.dll"><Private>false</Private></Reference>
     <Reference Include="$(GameDir)\BepInEx\interop\*.dll"><Private>false</Private></Reference>
-  </ItemGroup>
+  <Reference Include="SprocketKeybinds"><HintPath>$(GameDir)\BepInEx\plugins\SprocketKeybinds\SprocketKeybinds.dll</HintPath><Private>false</Private></Reference></ItemGroup>
 </Project>
+

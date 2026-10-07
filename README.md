@@ -1,47 +1,61 @@
-# Sprocket ThermalSight
+# Sprocket Thermal Sight
 
-**Required dependency: [Sprocket Keybinds API 0.1.5](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.5). Hydropneumatic, Telescopic Mast, Thermal Sight and Smoke Launchers will not load without it. The full pack includes it: keep its DLL installed. For separate plugin downloads, install the API ZIP once, merging its BepInEx folder into your game folder.**
-
-One configurable thermal sight with selectable, saved profiles and monochrome thermal display.
-
-**v0.2.5 — beta.** Thermal placement and operation now use the owning vehicle design date from 3 September 1945 instead of an era name. Valid custom postwar and future eras are supported. Earlier designs keep their saved sight/profile and physical properties but use ordinary sight view.
+Thermal sights, rangefinders and fire-control sights for Sprocket 0.2.55.5. Version 0.2.6 adds thermal head models, separate optical/laser rangefinders, FCS links, a T-72-style sight and updated optical glass. See RELEASE-NOTES.md for changes from public 0.2.5.
 
 ## Requirements
 
-- Sprocket **0.2.55.5**, Windows x64, Unity 6000.3.21f1.
-- A working **Sprocket Mod Loader / BepInEx 6 IL2CPP (6.0.0-be.788)** setup with its runtime and generated interop. Loader installation is separate. Stock BepInEx alone is not claimed equivalent to the tested Sprocket-specific setup.
-- [Sprocket Keybinds 0.1.5](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.5), installed separately once. This is required: without a compatible API, BepInEx skips this mod. The full pack includes it.
-- The [Cold War core/pack](https://github.com/RoanWassink/SprocketColdWarExpansionPack/releases) unlocks the native Cold War era and repairs native era classification. Custom eras are supported by date; they do not need to be named Coldwar. Install the core-only download if you do not want the full pack.
-- Quality of Life is not required or included. Other game versions have not been verified.
+Windows x64, Sprocket 0.2.55.5, a working Sprocket Mod Loader / BepInEx 6 IL2CPP setup, and Sprocket Keybinds API 0.1.6. The loader and API are separate dependencies; a full Cold War pack supplies the API. Era availability follows native part dates and the registered era timeline.
 
 ## Install and update
 
-1. Install a working Sprocket Mod Loader / BepInEx 6 IL2CPP setup, run Sprocket once, then close it. The loader is a separate prerequisite and is not included.
-2. Download **SprocketThermalSight-v0.2.5.zip** from [this release](https://github.com/RoanWassink/SprocketThermalSight/releases/tag/v0.2.5).
-3. In Steam, use Sprocket > Manage > Browse local files. Copy the ZIP's folders into the folder containing Sprocket.exe. Merge folders; keep the internal structure intact.
-4. Keep one copy of each plugin. Back up matching mod files and vehicle saves before updating. Never replace the whole BepInEx folder.
-5. Preserve existing BepInEx/config files, customized thermal-models.json and sound overrides. Install required dependencies separately. Restart the game.
+Close Sprocket. Back up matching Thermal files and vehicle saves. Copy the package's BepInEx and Sprocket_Data folders into the folder containing Sprocket.exe, merge directories, and replace matching files. Keep exactly one Thermal plugin DLL. Do not replace the entire shared directories.
 
-## Usage, controls and settings
+Preserve customized BepInEx/plugins/SprocketThermalSight/thermal-models.json. The default catalogue is a starter example, not an update replacement. Existing old nl.roan.sprocket.thermalsight.cfg is copied to sprocket.thermalsight.cfg only when the latter does not exist; the original remains available for rollback. An existing neutral configuration wins.
 
-Place Thermal sight, right-click > Thermal sight > Profile, and select a profile. The choice is saved per sight. Thermal / Toggle and Thermal / Reload profiles are in Mod keybinds (N/F8 factory defaults). Profiles are kept in BepInEx/plugins/SprocketThermalSight/thermal-models.json; this is a **starter file**, never overwrite your customized copy. New profile componentId values must be unique and defaultProfileId must reference an existing one. Edit, then use Reload profiles or restart. [Custom profiles](CUSTOMIZATION.md) includes a complete starter catalogue and examples. Five monochrome defaults remain; custom palettes are optional. Thermal is a visual gameplay approximation, not real temperature sensing. Earlier-era/imported sights keep their profile and mass/cost but display ordinary scope view. Remove custom sight parts before uninstalling.
+## Fire control and rangefinders
 
-## Troubleshooting, saves and rollback
+Place an internal **FCS** within the gunner's normal operating reach. Link one or more external sights using the FCS inspector or the sight's FCS dropdown, then assign the external sight to the cannon as usual. There is no FCS-to-sight distance limit. Each sight links to one FCS; its own thermal Profile selection determines the image. A daylight sight remains daylight when linked. Thermal mode uses a toggle.
 
-If the mod is absent, check BepInEx/LogOutput.log for the mod name, missing dependencies, duplicate plugin versions or invalid configuration. When this mod requires Keybinds, missing/incompatible Keybinds causes the mod to be skipped; old direct-key CFG entries do not replace that requirement. Preserve a malformed file for inspection instead of overwriting all your settings. Restart after repairs.
+A fitted rangefinder provides measurements through any active sight on the same vehicle. The optical coincidence model takes longer and rounds readings more coarsely; its length affects the reading precision. The manual laser gives a reading, while the automatic laser also sets the aim range using the selected shell's ballistics, including APFSDS. Gun-launched guided missiles do not need ballistic ranging. These are gameplay aids, not guaranteed accuracy for every weapon and moving target.
 
-Restore your backed-up mod files and settings together for rollback. Do not delete an entire shared folder. Custom parts/materials may be referenced by vehicle saves: return affected vehicles to stock parts/materials and save before uninstalling. Keep save backups; installed mods and release archives do not back up every vehicle automatically.
+The **Sights and electronics** menu contains the FCS, thermal heads, rangefinders, **T72 style sight**, and decorative scalable clear, tinted and yellow window panes. The panes can be used independently; they do not add thermal or rangefinding functionality. Build your own outer structures around the generic sensor models.
 
-## Credits and support
+## Use
 
-Made with AI assistance. Mod code is MIT licensed; native Sprocket meshes/icons are resolved from your installed game and are not bundled. Donation: [Support my ChatGPT budget and help me reverse engineer Sprocket to make more mods](https://www.paypal.com/donate/?hosted_button_id=7PE3SDBETXFQ6).
+Place a thermal sight/head and use its right-click Profile menu to select a JSON profile. The selection is stored per sight. Added valid profiles appear in that menu; componentId values must be unique and defaultProfileId must reference an existing profile. Use Reload profiles after edits.
 
-## Where to get the separate loader
+Configure Thermal / Toggle, Thermal / Reload profiles and Thermal / Measure range in Settings / keybinds. Toggle and reload have factory defaults N/F8; measure is initially unbound. The new rangefinders and FCS parts provide the rangefinder/FCS options; available parts depend on the owning design date.
 
-Use [Hans21223's Sprocket Mod Loader](https://github.com/Hans21223/Sprocket-Mod-Loader) and follow its [manual installation guide](https://github.com/Hans21223/Sprocket-Mod-Loader/blob/main/package/MANUAL-INSTALL.md) or its documented manager installation. That upstream project targets the tested Sprocket version and supplies the Sprocket-specific patch. These mod downloads do not install the loader. Follow one upstream loader method and its update/backup instructions; the creator's supplied ModManager archive is not redistributed here.
+Older vehicle saves retain legacy part/profile identities. Thermal imagery is a gameplay approximation rather than real temperature sensing.
 
-## Custom eras and this update
+## Configuration and rollback
 
-Thermal placement and operation now use the owning vehicle design date from 3 September 1945 instead of an era name. Valid custom postwar and future eras are supported. Earlier designs keep their saved sight/profile and physical properties but use ordinary sight view. The cutoff is inclusive. Availability follows the owning design and a valid registered era timeline, not the displayed era label. Missing or malformed dates/timelines fail closed. The game's last-era date sentinel is resolved from the actual final era start; saved dates are not rewritten. This is a pack availability policy, not a claim that every included technology existed in 1945.
+See CUSTOMIZATION.md for profile settings, quality and refresh-rate units. Invalid profile changes retain the last accepted catalogue. Back up customized catalogues and settings. To roll back, close the game and restore the matching DLL, assets and native part/localization files together. Keep save backups.
 
-**Sprocket Keybinds API remains mandatory.** Preserve your customized thermal-models.json and keybind configuration. Profile identities, rendering, mass/cost and controls are unchanged.
+## Credits and assets
+
+Made with AI assistance. The generic automatic rangefinder housing and its icon are original procedural assets by Nero, distributed under this repository's MIT license. See ASSET-CREDITS.md.
+
+Support: https://www.paypal.com/donate/?hosted_button_id=7PE3SDBETXFQ6
+
+
+## Saved profiles and compatibility
+
+Existing profile IDs and console-link VUIDs retain their meanings. Older vehicle files remain untouched until you save them. On the next save, the profile key becomes sprocketThermalProfile; older roanThermalProfile keys are read as a fallback. If both are present, the neutral key wins. Back up vehicle saves before updating. Older plugin versions may not read the neutral profile key; restore your pre-update vehicle backup when rolling back.
+
+The shared API migrates toggle, reload-profiles and rangefinder-measure bindings to sprocket.thermalsight before registration. Existing neutral bindings win, including deliberately unbound actions. Legacy binding records remain for rollback. The full migration requires API 0.1.6 or later within the compatible 0.1.x range.
+
+
+## Rangefinder settings
+
+Edit `BepInEx/config/sprocket.thermalsight.cfg` with Sprocket closed, then restart. `[Rangefinder]` has `Enabled=true`; maximum distance defaults to 4000 m (100–10000), minimum to 50 m (0–1000), cooldown to 3 seconds (0.1–30), and display duration to 5 seconds (1–30). A reading is a snapshot. The closest solid obstruction controls the result; an obstruction within the minimum range produces **Too close**. Keep minimum below maximum.
+
+## Troubleshooting and removal
+
+If the mod is missing, check the loader log and install one compatible Keybinds API DLL. Blank icons or missing models usually indicate incomplete asset/native-part installation. A missing linked FCS disables the thermal connection: select an existing FCS or direct eyepiece. Preserve malformed custom profiles, restore a known-good catalogue and reload it.
+
+Before uninstalling, remove addon parts from vehicles you intend to keep using and save backup copies. With the game closed, remove this plugin's DLL, owned assets and part/localization files; leave shared Keybinds and other mods intact. Restore pre-update vehicles when rolling back to a version that does not read the neutral saved-profile key.
+
+[Sprocket Keybinds download](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.6). [Sprocket Mod Loader](https://github.com/Hans21223/Sprocket-Mod-Loader).
+
+[Support my ChatGPT budget and help me reverse engineer Sprocket to make more mods.](https://www.paypal.com/donate/?hosted_button_id=7PE3SDBETXFQ6)

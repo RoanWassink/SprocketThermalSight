@@ -1,12 +1,8 @@
 {
-  "v": "0.0",
+  "v": "0.2",
   "guid": "37d49a2d-57ab-598a-8622-e909c48b2ad9",
   "name": "thermalSightMk3WhiteHot",
-  "tags": [
-    "gunner",
-    "scope",
-    "cannon"
-  ],
+  "tags": [],
   "components": [
     {
       "fileID": "thermalSightMk3WhiteHot",
@@ -38,7 +34,7 @@
         "scaling": true,
         "flipping": true,
         "selectable": true,
-        "placementSurface": false,
+        "placementSurface": true,
         "damageable": false
       }
     }
@@ -53,7 +49,7 @@
     "translation": true,
     "rotation": true,
     "scaling": true,
-    "dynamic": false,
+    "dynamic": true,
     "placementMode": "forwards",
     "scale": [
       1.0,
@@ -72,5 +68,6 @@
     ],
     "objects": []
   },
-  "date": "1945.09.03"
+  "date": "1945.09.03",
+  "order": 0
 }

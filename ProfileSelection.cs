@@ -11,7 +11,7 @@ namespace SprocketThermalSight;
 
 internal static class ProfileStateHooks
 {
-    private const string Key = "roanThermalProfile";
+    private const string Key = SavedProfileKeys.Canonical;
     private sealed record Choice(VehicleComponent Component, string Id);
     private static readonly Dictionary<IntPtr, Choice> Choices = new();
     internal static string? Selection(VehicleComponent component) => Choices.TryGetValue(component.Pointer, out var choice) ? choice.Id : null;
@@ -42,14 +42,15 @@ internal static class ProfileStateHooks
         try
         {
             Choices.Remove(__instance.Pointer);
+            var names = new List<string>();
             var entries = __0.GetEnumerator();
-            while (entries.MoveNext())
-                if (entries.Name == Key)
-                {
-                    var id = __0.GetString(Key);
-                    if (!string.IsNullOrWhiteSpace(id)) Choices[__instance.Pointer] = new(__instance, id);
-                    break;
-                }
+            while (entries.MoveNext()) names.Add(entries.Name);
+            var key = SavedProfileKeys.Resolve(names);
+            if (key != null)
+            {
+                var id = __0.GetString(key);
+                if (!string.IsNullOrWhiteSpace(id)) Choices[__instance.Pointer] = new(__instance, id);
+            }
         }
         catch (Exception ex) { Runtime.Warn("Load profile: " + ex); }
     }
@@ -78,7 +79,7 @@ internal static class ProfileInspector
             if (ui == null) return;
             if (!ThermalEraAccess.Allowed(sight))
             {
-                ui.InfoField("Thermal available from 1945-09-03; saved profile retained, normal sight active.", 2);
+                ui.InfoField("This sight is unavailable at the vehicle date according to its native Part definition; saved profile retained, normal sight active.", 2);
                 return;
             }
             var profiles = Runtime.Profiles.ToArray();
@@ -115,6 +116,7 @@ internal static class ProfileInspector
         __result = new(__result.Where(card => card?.TryCast<Sprocket.PartImporting.PartDisplayCard>() is not {} part || !Runtime.IsLegacyGuid(part.PartGuid)).ToArray());
     }
 }
+
 
 
 

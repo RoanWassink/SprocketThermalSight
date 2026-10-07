@@ -1,23 +1,13 @@
-# Changelog
+# Changelog - 0.2.6 changes from public 0.2.5
 
-## v0.2.1 — One sight, selectable profiles
+Compared with public 0.2.5, this update adds separate thermal heads, optical and laser rangefinders, configurable sight-console links and a T-72-style sight. Choose profiles on the installed sight; profiles remain defined in thermal-models.json and saved per sight.
 
-- One Thermal sight part with a right-click Thermal sight → Profile dropdown.
-- Store the chosen JSON profile ID separately on each sight in vehicle saves.
-- New profiles need only a catalog entry; no new part GUID, JSON or localization files.
-- Configurable defaultProfileId, retained legacy sight definitions and missing-ID fallback.
-- Shared sight icon, rebuild on profile selection and mass-cache refresh.
-- Fix startup failure in the unpublished v0.2.0 test build by replacing unsafe save/load hooks.
+Thermal heads have horizontal and vertical models, profile-dependent appearance and updated icons. Rangefinder/FCS integration includes ballistic aiming behavior and APFSDS support. Sights are grouped in the native part menu. Legacy thermal parts retain their save identities and are hidden from new placement. Optical glass, lens/window rendering and the sight presentation are updated.
 
-The creator confirmed the menu/profile choice and saving/loading work in-game. Existing profile values are preserved when using the optional merging installer; manual catalog replacement overwrites custom settings.
+Availability uses each part's native date and the owning design's valid registered era timeline. Custom eras are supported by date rather than label. Existing saved profiles, physical values and thermal configuration remain compatible.
 
-## v0.1.5 — First public release
+Configure Thermal / Toggle, Thermal / Reload profiles and Thermal / Measure range in Settings / keybinds. Measure range is unbound by default.
 
-- Five thermal sight parts: model 1, 2, 3, Mk3 White hot and Mk3 Black hot.
-- Scope-only N toggle and F8 profile reload.
-- Per-part quality, tones, optional palettes and added mass/cost settings.
-- Latest white-hot terrain brightness tuning; black-hot settings retained.
-- Default release restricted to monochrome parts. Optional custom palette processing remains available through JSON.
-- Customization helper creates unique profile/part/name identities; optional installer preserves existing profiles and backs up replaced files.
+Requires a working Sprocket Mod Loader / BepInEx 6 IL2CPP setup and compatible shared Sprocket Keybinds API. Loader, API and game assemblies are not included. Preserve customized thermal-models.json and keybind settings when updating. Thermal is a gameplay approximation.
 
-The creator confirmed thermal operation in-game. Image processing is a gameplay approximation; full vehicle mass/cost aggregation and long-session stability are not exhaustively validated.
+<!-- sp-compat {"hamish.sprocket": "0.2.55.5", "bepinex.bepinex": "6.0.0-be.788"} -->

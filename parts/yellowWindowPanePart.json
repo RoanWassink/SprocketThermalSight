@@ -1,0 +1,61 @@
+{
+  "v": "0.2",
+  "guid": "862d1452-9b48-4efc-bafd-a7eb8eac6117",
+  "name": "yellowWindowPane",
+  "tags": [
+    "cannon",
+    "scope",
+    "sightsElectronics",
+    "opticalGlass"
+  ],
+  "components": [
+    {
+      "fileID": "yellowWindowPane",
+      "type": "model",
+      "info": {
+        "v": "0.2",
+        "meshGuid": "60f759b164460a140bf65902dd96dd5c",
+        "materialGuids": [
+          "91dfa45c1494952458353d309cfa9aa9"
+        ],
+        "scaling": true,
+        "flipping": true,
+        "selectable": true,
+        "placementSurface": false,
+        "damageable": false,
+        "mass": 0.5
+      }
+    }
+  ],
+  "transform": {
+    "mirroring": true,
+    "duplication": true,
+    "pickup": true,
+    "snapToCentre": true,
+    "autoRotate": true,
+    "airPlacement": true,
+    "translation": true,
+    "rotation": true,
+    "scaling": true,
+    "dynamic": true,
+    "placementMode": "forwards",
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "maxScale": [
+      20,
+      20,
+      20
+    ],
+    "minScale": [
+      0.1,
+      0.1,
+      0.1
+    ],
+    "objects": []
+  },
+  "date": "1900.01.01",
+  "order": 0
+}

@@ -1,0 +1,61 @@
+{
+  "v": "0.2",
+  "guid": "b93efc74-6702-4d2e-9211-dfe313ffdab3",
+  "name": "opticalCoincidenceRangefinder",
+  "tags": [
+    "opticalCoincidenceRangefinder",
+    "cannon",
+    "scope",
+    "sightsElectronics"
+  ],
+  "components": [
+    {
+      "fileID": "opticalCoincidenceRangefinder",
+      "type": "model",
+      "info": {
+        "v": "0.2",
+        "meshGuid": "60f759b164460a140bf65902dd96dd5c",
+        "materialGuids": [
+          "91dfa45c1494952458353d309cfa9aa9"
+        ],
+        "scaling": true,
+        "flipping": true,
+        "selectable": true,
+        "placementSurface": true,
+        "damageable": true,
+        "mass": 0
+      }
+    }
+  ],
+  "transform": {
+    "mirroring": true,
+    "duplication": true,
+    "pickup": true,
+    "snapToCentre": true,
+    "autoRotate": false,
+    "airPlacement": true,
+    "translation": true,
+    "rotation": true,
+    "scaling": true,
+    "dynamic": true,
+    "placementMode": "upright",
+    "scale": [
+      0.5,
+      1,
+      1
+    ],
+    "maxScale": [
+      1.5,
+      1,
+      1
+    ],
+    "minScale": [
+      0.375,
+      1,
+      1
+    ],
+    "objects": []
+  },
+  "date": "1943.10.19",
+  "order": 0
+}

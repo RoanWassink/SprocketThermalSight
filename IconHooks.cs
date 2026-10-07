@@ -6,9 +6,9 @@ namespace SprocketThermalSight;
 
 internal static class IconHooks
 {
-    private static Texture2D? texture;
-    private static Sprite? sprite;
-    private static bool attempted;
+    private static readonly Dictionary<bool,Texture2D> textures=new();
+    private static readonly Dictionary<bool,Sprite> sprites=new();
+    private static readonly HashSet<bool> attempted=new();
 
     [HarmonyPostfix, HarmonyPatch(typeof(PartDefinitionCardFactory), nameof(PartDefinitionCardFactory.CreateCard))]
     private static void Card(PartDefinition __0, PartDisplayCard __result)
@@ -16,24 +16,26 @@ internal static class IconHooks
         if (__0 == null || __result == null || !Runtime.OwnsPartGuid(__0.guid)) return;
         try
         {
-            if (!attempted)
+            bool vertical=string.Equals(__0.guid,Runtime.VerticalGuid,StringComparison.OrdinalIgnoreCase);
+            if (attempted.Add(vertical))
             {
-                attempted = true;
-                string path = Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!, "assets", "thermal-sight-icon.png");
-                texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+                
+                string path = Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!, "assets", vertical ? "thermal-head-vertical-icon.png" : "thermal-head-icon.png");
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
                 if (!ImageConversion.LoadImage(texture, File.ReadAllBytes(path), false)) throw new InvalidDataException("Thermal sight icon could not be decoded.");
-                sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), 100);
+                var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), 100);
                 sprite.hideFlags = HideFlags.HideAndDontSave;
+                textures[vertical]=texture;sprites[vertical]=sprite;
                 Plugin.Instance.Log.LogInfo("[Thermal] Shared thermal sight icon loaded.");
             }
-            if (sprite != null) __result.Icon = sprite;
+            if (sprites.TryGetValue(vertical,out var selected)) __result.Icon = selected;
         }
         catch (Exception ex) { Runtime.Warn("Optional part icon: " + ex.Message); }
     }
     internal static void Cleanup()
     {
-        if (sprite != null) UnityEngine.Object.Destroy(sprite);
-        if (texture != null) UnityEngine.Object.Destroy(texture);
-        sprite = null; texture = null; attempted = false;
+        foreach(var sprite in sprites.Values) UnityEngine.Object.Destroy(sprite);
+        foreach(var texture in textures.Values) UnityEngine.Object.Destroy(texture);
+        sprites.Clear();textures.Clear();attempted.Clear();
     }
 }

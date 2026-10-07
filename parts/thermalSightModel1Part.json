@@ -1,12 +1,8 @@
 {
-  "v": "0.0",
+  "v": "0.2",
   "guid": "e1e0a2bf-5316-416a-b45e-b8e70b21a151",
   "name": "thermalSightModel1",
-  "tags": [
-    "gunner",
-    "scope",
-    "cannon"
-  ],
+  "tags": [],
   "components": [
     {
       "fileID": "thermalSightModel1",
@@ -38,7 +34,7 @@
         "scaling": true,
         "flipping": true,
         "selectable": true,
-        "placementSurface": false,
+        "placementSurface": true,
         "damageable": false
       }
     }
@@ -53,7 +49,7 @@
     "translation": true,
     "rotation": true,
     "scaling": true,
-    "dynamic": false,
+    "dynamic": true,
     "placementMode": "forwards",
     "scale": [
       1.0,
@@ -72,5 +68,6 @@
     ],
     "objects": []
   },
-  "date": "1945.09.03"
+  "date": "1945.09.03",
+  "order": 0
 }

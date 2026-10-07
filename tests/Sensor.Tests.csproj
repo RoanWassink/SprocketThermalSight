@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
-  <ItemGroup><Compile Include="../ThermalProfiles.cs" Link="ThermalProfiles.cs" /><Compile Include="../BufferLayout.cs" Link="BufferLayout.cs" /><Compile Include="../ThermalEraPolicy.cs" Link="ThermalEraPolicy.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../ThermalProfiles.cs" Link="ThermalProfiles.cs" /><Compile Include="../BufferLayout.cs" Link="BufferLayout.cs" /><Compile Include="../ThermalEraPolicy.cs" Link="ThermalEraPolicy.cs" /><Compile Include="../RangefinderPolicy.cs" Link="RangefinderPolicy.cs" /><Compile Include="../RangefinderDevicePolicy.cs" Link="RangefinderDevicePolicy.cs" /><Compile Include="../SavedProfileKeys.cs" Link="SavedProfileKeys.cs" /></ItemGroup>
 </Project>
+
+
+
 
 

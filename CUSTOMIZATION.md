@@ -4,7 +4,7 @@ The live file is `BepInEx/plugins/SprocketThermalSight/thermal-models.json`. Bac
 
 `examples/thermal-models-with-custom-profile.json` is a complete valid starter catalogue with the five defaults plus `myThermalProfile`. It is intended for a clean setup/reference, not to overwrite custom data. The new entry reduces noise to 0.02; select it through right-click > Thermal sight > Profile. For your own file, copy that entry and choose a new componentId. Keep defaultProfileId pointing to a present componentId. Changing displayName does not change a saved profile identity.
 
-Edit while paused/closed, then use Thermal / Reload profiles (factory F8) or restart. Config and starter profile defaults are preserved on update. Missing saved IDs fall back to a valid default with a warning while retaining the original selection identity. Profiles cannot bypass the Cold War eligibility gate.
+Edit while paused/closed, then use Thermal / Reload profiles (factory F8) or restart. Config and starter profile defaults are preserved on update. Missing saved IDs fall back to a valid default with a warning while retaining the original selection identity. Profiles cannot bypass native part-date availability.
 
 | Setting | Supported values / units | Practical effect |
 |---|---|---|

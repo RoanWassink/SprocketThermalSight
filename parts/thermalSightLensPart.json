@@ -1,0 +1,61 @@
+{
+  "v": "0.2",
+  "guid": "c5319088-49d1-46b4-9112-07a9b4e040fe",
+  "name": "thermalSightLens",
+  "tags": [
+    "cannon",
+    "scope",
+    "sightsElectronics",
+    "opticalGlass"
+  ],
+  "components": [
+    {
+      "fileID": "thermalLensModel",
+      "type": "model",
+      "info": {
+        "v": "0.2",
+        "meshGuid": "60f759b164460a140bf65902dd96dd5c",
+        "materialGuids": [
+          "91dfa45c1494952458353d309cfa9aa9"
+        ],
+        "scaling": true,
+        "flipping": true,
+        "selectable": true,
+        "placementSurface": false,
+        "damageable": false,
+        "mass": 0.5
+      }
+    }
+  ],
+  "transform": {
+    "mirroring": true,
+    "duplication": true,
+    "pickup": true,
+    "snapToCentre": true,
+    "autoRotate": true,
+    "airPlacement": true,
+    "translation": true,
+    "rotation": true,
+    "scaling": true,
+    "dynamic": true,
+    "placementMode": "forwards",
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "maxScale": [
+      3.0,
+      3.0,
+      3.0
+    ],
+    "minScale": [
+      0.25,
+      0.25,
+      0.25
+    ],
+    "objects": []
+  },
+  "date": "1945.09.03",
+  "order": 0
+}

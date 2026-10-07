@@ -19,44 +19,89 @@ using NativeScope = Sprocket.Vehicles.Weapons.Scope;
 
 namespace SprocketThermalSight;
 
-[BepInPlugin("nl.roan.sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.5")]
-[BepInDependency(Keybinds.PluginGuid, ">=0.1.3 <0.2.0")]
+[BepInPlugin("sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.6")]
+[BepInDependency(Keybinds.PluginGuid, ">=0.1.6 <0.2.0")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
     private Harmony? harmony;
     private Harmony? iconHarmony;
+    private Harmony? visualHarmony;
+    private Harmony? rangeHarmony;
+    private Harmony? menuHarmony;
+    private Harmony? consoleModelHarmony;
     public override void Load()
     {
         Instance = this;
         try
         {
+            ConfigMigration.Import(Config);
+            Keybinds.RegisterModMetadata("sprocket.thermalsight", "Nero", "Thermal");
             Runtime.Configure(Config);
-            harmony = new Harmony("nl.roan.sprocket.thermalsight");
+            harmony = new Harmony("sprocket.thermalsight");
             harmony.PatchAll(typeof(Hooks));
             harmony.PatchAll(typeof(ProfileStateHooks));
+            harmony.PatchAll(typeof(ConsoleLinks));
             AddComponent<ThermalDriver>();
-            Log.LogInfo("Thermal sight v0.2.5 loaded; shared Settings keybinds and dynamic-resolution rendering supported.");
+            Log.LogInfo("Thermal sight v0.2.6 loaded; shared Settings keybinds and dynamic-resolution rendering supported.");
         }
         catch (Exception ex) { Runtime.Shutdown(); Runtime.ReleaseBindings(); harmony?.UnpatchSelf(); Log.LogError("Thermal disabled: " + ex); return; }
         try
         {
-            iconHarmony = new Harmony("nl.roan.sprocket.thermalsight.icon");
-            iconHarmony.PatchAll(typeof(IconHooks));
-            iconHarmony.PatchAll(typeof(ProfileInspector));
+            iconHarmony = new Harmony("sprocket.thermalsight.icon");
+            iconHarmony.PatchAll(typeof(ElectronicsIcons));
         }
-        catch (Exception ex) { iconHarmony?.UnpatchSelf(); Log.LogWarning("Optional thermal icon hook disabled: " + ex.Message); }
+        catch(Exception ex){iconHarmony?.UnpatchSelf();Log.LogWarning("Optional electronics icons disabled: "+ex.Message);}
+        try
+        {
+            visualHarmony=new Harmony("sprocket.thermalsight.visual");
+            visualHarmony.PatchAll(typeof(ProfileInspector));
+            visualHarmony.PatchAll(typeof(LensAssets));
+            visualHarmony.PatchAll(typeof(ThermalModelAssets));
+        }
+        catch (Exception ex) { visualHarmony?.UnpatchSelf(); Log.LogWarning("Optional thermal visual hooks disabled: " + ex.Message); }
+        try
+        {
+            consoleModelHarmony=new Harmony("sprocket.thermalsight.fcs-model");
+            consoleModelHarmony.PatchAll(typeof(ConsoleAssets));
+            consoleModelHarmony.PatchAll(typeof(T72SightAssets));
+        }
+        catch(Exception ex){consoleModelHarmony?.UnpatchSelf();Log.LogWarning("Optional FCS model hooks disabled: "+ex.Message);}
+        try
+        {
+            menuHarmony = new Harmony("sprocket.thermalsight.menu");
+            menuHarmony.PatchAll(typeof(SightsMenu));
+        }
+        catch (Exception ex) { menuHarmony?.UnpatchSelf(); Log.LogWarning("Optional sights menu disabled; native selection retained: " + ex.Message); }
+        try
+        {
+            Rangefinder.Configure(Config);
+            rangeHarmony = new Harmony("sprocket.thermalsight.rangefinder");
+            rangeHarmony.PatchAll(typeof(RangefinderHooks));
+            rangeHarmony.PatchAll(typeof(RangefinderAssets));
+            rangeHarmony.PatchAll(typeof(RangefinderBallistics));
+            Log.LogInfo("[Rangefinder] Fitted Laser rangefinder device support ready; assign Thermal / Measure range in Settings.");
+        }
+        catch (Exception ex) { rangeHarmony?.UnpatchSelf(); Rangefinder.Shutdown(); Log.LogWarning("Optional rangefinder disabled: " + ex.Message); }
     }
     public override bool Unload()
-    { Runtime.Shutdown(); Runtime.ReleaseBindings(); iconHarmony?.UnpatchSelf(); IconHooks.Cleanup(); harmony?.UnpatchSelf(); return true; }
+    { ConsoleLinks.Clear(); consoleModelHarmony?.UnpatchSelf(); ElectronicsIcons.Cleanup(); visualHarmony?.UnpatchSelf(); menuHarmony?.UnpatchSelf(); Rangefinder.Shutdown(); rangeHarmony?.UnpatchSelf(); RangefinderAssets.Shutdown(); Runtime.Shutdown(); Runtime.ReleaseBindings(); iconHarmony?.UnpatchSelf(); IconHooks.Cleanup(); harmony?.UnpatchSelf(); return true; }
 }
 
 public sealed class ThermalDriver : MonoBehaviour
 {
     public ThermalDriver(IntPtr ptr) : base(ptr) { }
     public void LateUpdate()
-    { try { Runtime.Tick(); } catch (Exception ex) { Runtime.Fail(ex); } }
-    public void OnDestroy() => Runtime.Shutdown();
+    {
+        try { Runtime.Tick(); } catch (Exception ex) { Runtime.Fail(ex); }
+        try { Rangefinder.Tick(); } catch (Exception ex) { Rangefinder.Fail(ex); }
+        RangefinderAssets.Tick();
+        LensAssets.Tick();
+        ThermalModelAssets.Tick();
+        try { ConsoleLinks.Tick(); ConsoleAssets.Tick(); T72SightAssets.Tick(); } catch(Exception ex) { Runtime.Warn("Console update: "+ex.Message); }
+    }
+    public void OnGUI() { try { Rangefinder.Draw(); } catch (Exception ex) { Rangefinder.Fail(ex, true); } }
+    public void OnDestroy() { Rangefinder.Clear(); Runtime.Shutdown(); }
 }
 
 internal static class Runtime
@@ -67,12 +112,16 @@ internal static class Runtime
     private static ConfigEntry<bool> enabled = null!;
     private static Dictionary<string, ThermalProfile> models = new(StringComparer.Ordinal);
     private static string defaultProfileId = "thermalSightModel3";
+    internal const string VerticalId = "thermalSightVertical";
+    internal const string VerticalGuid = "937bf2e5-17c6-4bae-a7b4-489bf5bc2e68";
     internal const string ConfigurableId = "thermalSight";
+    internal const string LensId = "thermalSightLens";
+    internal const string LensGuid = "c5319088-49d1-46b4-9112-07a9b4e040fe";
     internal const string ConfigurableGuid = "c9f96b83-cd58-47d1-999b-83c5e71a981f";
     private static readonly HashSet<string> legacyIds = new(StringComparer.Ordinal) { "thermalSightModel1", "thermalSightModel2", "thermalSightModel3", "thermalSightMk3WhiteHot", "thermalSightMk3BlackHot" };
     private static readonly HashSet<string> legacyGuids = new(StringComparer.OrdinalIgnoreCase) { "e1e0a2bf-5316-416a-b45e-b8e70b21a151", "40b644a7-90ed-47c7-b78f-e2f7310b80a2", "39614761-b743-408d-b112-9d4c24673c03", "37d49a2d-57ab-598a-8622-e909c48b2ad9", "ae0c73ac-6831-5c43-abf4-118b5352914d" };
     internal static IReadOnlyList<ThermalProfile> Profiles => models.Values.ToArray();
-    internal static bool IsThermal(VehicleComponent component) => component != null && component.TryCast<GunnerSight>() != null && (component.ComponentID == ConfigurableId || legacyIds.Contains(component.ComponentID));
+    internal static bool IsThermal(VehicleComponent component) => component != null && component.TryCast<GunnerSight>() != null && (component.ComponentID == ConfigurableId || component.ComponentID == VerticalId || legacyIds.Contains(component.ComponentID));
     internal static bool IsLegacyGuid(string guid) => legacyGuids.Contains(guid);
     private static string catalogPath = "";
     private static bool active, inputAllowed, stopped;
@@ -102,8 +151,10 @@ internal static class Runtime
         reload = config.Bind("Keys", "ReloadProfiles", Key.F8, "Legacy import only; edit Thermal / Reload profiles in Settings / keybinds. Invalid profiles keep the last accepted catalog.");
         catalogPath = Path.Combine(Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!, "thermal-models.json");
         Reload(); stopped = false;
-        toggleBinding = Keybinds.RegisterButton("nl.roan.sprocket.thermalsight", "Thermal", "toggle", "Toggle", "<Keyboard>/n");
-        reloadBinding = Keybinds.RegisterButton("nl.roan.sprocket.thermalsight", "Thermal", "reload-profiles", "Reload profiles", "<Keyboard>/f8");
+        Keybinds.TryMigrateBindingIdentity("nl.roan.sprocket.thermalsight", "toggle", "sprocket.thermalsight", "toggle");
+        Keybinds.TryMigrateBindingIdentity("nl.roan.sprocket.thermalsight", "reload-profiles", "sprocket.thermalsight", "reload-profiles");
+        toggleBinding = Keybinds.RegisterButton("sprocket.thermalsight", "Thermal", "toggle", "Toggle", "<Keyboard>/n");
+        reloadBinding = Keybinds.RegisterButton("sprocket.thermalsight", "Thermal", "reload-profiles", "Reload profiles", "<Keyboard>/f8");
         legacyKeysImported = false;
         TryImportLegacyKeys();
     }
@@ -131,12 +182,12 @@ internal static class Runtime
         // VehicleObject.GUID identifies a placed object and is NOT the asset GUID.
         if (!IsThermal(component)) return false;
         var requested = ProfileStateHooks.Selection(component);
-        var id = requested ?? (component.ComponentID == ConfigurableId ? defaultProfileId : component.ComponentID);
+        var id = requested ?? ((component.ComponentID == ConfigurableId || component.ComponentID == VerticalId) ? defaultProfileId : component.ComponentID);
         if (models.TryGetValue(id, out p!)) return true;
         Warn($"Saved profile '{id}' is missing; using '{defaultProfileId}' until restored or changed in the inspector.");
         return models.TryGetValue(defaultProfileId, out p!);
     }
-    internal static bool OwnsPartGuid(string guid) => string.Equals(guid, ConfigurableGuid, StringComparison.OrdinalIgnoreCase) || IsLegacyGuid(guid);
+    internal static bool OwnsPartGuid(string guid) => string.Equals(guid, ConfigurableGuid, StringComparison.OrdinalIgnoreCase) || string.Equals(guid, VerticalGuid, StringComparison.OrdinalIgnoreCase) || IsLegacyGuid(guid);
     internal static void PlayerInput(PlayerController controller, GameTime time, Camera view)
     {
         if (stopped) return;
@@ -155,7 +206,7 @@ internal static class Runtime
         // The native controller already decides whether a sight is usable. Non-damageable
         // optical components need not have a positive HealthFraction.
         activeSight = sight;
-        if (sight != null && ThermalEraAccess.Allowed(sight) && FindProfile(sight, out var p)) next = p;
+        if (sight != null && ThermalEraAccess.Allowed(sight) && ConsoleLinks.Profile(sight, out var p)) next = p;
         scopeDescription = $"scoped={controller.Scoped}, hasActive={controller.HasActive}, component={sight?.ComponentID ?? "none"}, health={sight?.HealthFraction.ToString() ?? "n/a"}, profile={next?.DisplayName ?? "none"}";
         IntPtr identity = sight?.Pointer ?? IntPtr.Zero;
         if (identity != sightId || !ReferenceEquals(next, selected))
@@ -281,8 +332,8 @@ internal static class Runtime
     { if (warnings.Add(message)) Plugin.Instance.Log.LogWarning("[Thermal] " + message); }
     internal static void ReleaseBindings()
     {
-        if (toggleBinding != null) { Keybinds.Unregister("nl.roan.sprocket.thermalsight", "toggle"); toggleBinding = null; }
-        if (reloadBinding != null) { Keybinds.Unregister("nl.roan.sprocket.thermalsight", "reload-profiles"); reloadBinding = null; }
+        if (toggleBinding != null) { Keybinds.Unregister("sprocket.thermalsight", "toggle"); toggleBinding = null; }
+        if (reloadBinding != null) { Keybinds.Unregister("sprocket.thermalsight", "reload-profiles"); reloadBinding = null; }
     }
     internal static void Shutdown()
     {
@@ -314,6 +365,18 @@ internal static class Hooks
     private static void Cost(VehicleComponent __instance, MassType __0, CostType __1, ref float __result)
     { if ((__0 & MassType.Mechanisms) != 0 && (__1 & CostType.Assembly) != 0 && Runtime.FindProfile(__instance, out var p)) __result += p.ExtraAssemblyCost; }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

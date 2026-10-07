@@ -4,12 +4,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Sprocket</GameDir>
+    <KeybindsDll Condition="'$(KeybindsDll)' == ''">$(GameDir)\BepInEx\plugins\SprocketKeybinds\SprocketKeybinds.dll</KeybindsDll>
     <PathMap>$(MSBuildThisFileDirectory)=/thermal-sight/</PathMap>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <Reference Include="$(GameDir)\BepInEx\core\*.dll" Exclude="$(GameDir)\BepInEx\core\TerraFX*.dll;$(GameDir)\BepInEx\core\dobby.dll"><Private>false</Private></Reference>
     <Reference Include="$(GameDir)\BepInEx\interop\*.dll"><Private>false</Private></Reference>
-  <Reference Include="SprocketKeybinds"><HintPath>$(GameDir)\BepInEx\plugins\SprocketKeybinds\SprocketKeybinds.dll</HintPath><Private>false</Private></Reference></ItemGroup>
+  <Reference Include="SprocketKeybinds"><HintPath>$(KeybindsDll)</HintPath><Private>false</Private></Reference></ItemGroup>
 </Project>
+
 

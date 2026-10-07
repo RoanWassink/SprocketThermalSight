@@ -1,0 +1,61 @@
+{
+  "v": "0.2",
+  "guid": "af74a44d-65e0-44ae-8ac3-61198eeb1b30",
+  "name": "automaticLaserRangefinder",
+  "tags": [
+    "automaticLaserRangefinder",
+    "cannon",
+    "scope",
+    "sightsElectronics"
+  ],
+  "components": [
+    {
+      "fileID": "automaticLaserRangefinder",
+      "type": "model",
+      "info": {
+        "v": "0.2",
+        "meshGuid": "60f759b164460a140bf65902dd96dd5c",
+        "materialGuids": [
+          "91dfa45c1494952458353d309cfa9aa9"
+        ],
+        "scaling": true,
+        "flipping": true,
+        "selectable": true,
+        "placementSurface": true,
+        "damageable": false,
+        "mass": 0
+      }
+    }
+  ],
+  "transform": {
+    "mirroring": true,
+    "duplication": true,
+    "pickup": true,
+    "snapToCentre": true,
+    "autoRotate": false,
+    "airPlacement": true,
+    "translation": true,
+    "rotation": true,
+    "scaling": true,
+    "dynamic": true,
+    "placementMode": "upright",
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "maxScale": [
+      3.0,
+      3.0,
+      3.0
+    ],
+    "minScale": [
+      0.25,
+      0.25,
+      0.25
+    ],
+    "objects": []
+  },
+  "date": "1945.09.03",
+  "order": 0
+}

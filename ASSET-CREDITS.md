@@ -1,4 +1,8 @@
-# Original automatic rangefinder assets
+# Asset credits
+
+**Wolfosito** created the T72 gunner sight and FCS models.
+
+## Original automatic rangefinder assets
 
 automatic-lrf.obj and automatic-lrf-icon.png are original procedural assets created for this mod by Nero, with AI assistance. They are distributed under the repository MIT license.
 

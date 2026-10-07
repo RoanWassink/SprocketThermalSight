@@ -14,3 +14,5 @@ Requires a working Sprocket Mod Loader / BepInEx 6 IL2CPP setup and Sprocket Key
 
 
 [Support my ChatGPT budget and help me reverse engineer Sprocket to make more mods.](https://www.paypal.com/donate/?hosted_button_id=7PE3SDBETXFQ6)
+
+**Wolfosito** created the T72 gunner sight and FCS models.

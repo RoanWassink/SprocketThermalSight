@@ -34,6 +34,8 @@ See CUSTOMIZATION.md for profile settings, quality and refresh-rate units. Inval
 
 ## Credits and assets
 
+**Wolfosito** created the T72 gunner sight and FCS models.
+
 Made with AI assistance. The generic automatic rangefinder housing and its icon are original procedural assets by Nero, distributed under this repository's MIT license. See ASSET-CREDITS.md.
 
 Support: https://www.paypal.com/donate/?hosted_button_id=7PE3SDBETXFQ6

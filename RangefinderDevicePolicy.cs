@@ -6,10 +6,12 @@ public static class RangefinderDevicePolicy
     public static RangefinderKind Kind(string? id) => id switch
     {
         "laserRangefinderSight" => RangefinderKind.ManualLaser,
+        "t72StyleSight" => RangefinderKind.ManualLaser,
         "automaticLaserRangefinder" => RangefinderKind.AutomaticLaser,
         "opticalCoincidenceRangefinder" => RangefinderKind.Optical,
         _ => RangefinderKind.None
     };
+    public static bool IsStandalone(string? id) => id != "t72StyleSight" && Kind(id) != RangefinderKind.None;
     public static double OpticalDelay(double range) => Math.Clamp(5 + .001 * range, 5, 8);
     public static double Mass(double baseline) => 8 + 7 * baseline;
     public static double Cost(double baseline) => 100 + 50 * baseline;
@@ -25,3 +27,4 @@ public static class RangefinderDevicePolicy
         return Math.Round(range / step, MidpointRounding.AwayFromZero) * step;
     }
 }
+

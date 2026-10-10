@@ -175,3 +175,8 @@ foreach(var profileId in new[]{"thermalSightModel3","custom-user-profile"})
  Check(oldSave[SavedProfileKeys.Legacy]==profileId, "old vehicle representation not mutated by load");
 }
 Console.WriteLine($"PASS: {checks} including legacy profile read/canonical write roundtrips.");
+Check(RangefinderDevicePolicy.Kind("t72StyleSight")==RangefinderKind.ManualLaser,"TPD-K1 provides laser ranging");
+Check(!RangefinderDevicePolicy.IsStandalone("t72StyleSight"),"Integrated sight retains its own native model and mass path");
+Check(RangefinderDevicePolicy.IsStandalone("laserRangefinderSight"),"Standalone laser retains device renderer");
+Check(!RangefinderDevicePolicy.IsStandalone(null),"Missing part cannot enable a device renderer");
+Console.WriteLine($"PASS: {checks} including integrated TPD-K1 classification.");

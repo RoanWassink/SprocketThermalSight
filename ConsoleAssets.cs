@@ -11,6 +11,7 @@ internal static class ConsoleAssets
 {
     private static Mesh? mesh;
     private static VehicleMaterial? glass;
+    private static VehicleMaterial? housing;
     private static float scanAt;
     private static bool failed;
     private static int appliedLogs;
@@ -63,8 +64,7 @@ internal static class ConsoleAssets
         var shader=Shader.Find("HDRP/Lit");if(shader==null)throw new InvalidOperationException("FCS shader unavailable");
         var surface=new Material(shader){name="FCS eyepiece glass",hideFlags=HideFlags.HideAndDontSave};
         surface.SetColor("_BaseColor",new Color(.035f,.065f,.075f,1));surface.SetFloat("_Smoothness",.88f);
-        // The supplied LENS export includes inward-facing housing faces. Render
-        // both sides without changing the author's mesh or normals.
+        // Render the optical surface from either side.
         surface.SetFloat("_DoubleSidedEnable",1);surface.SetFloat("_CullMode",0);surface.SetFloat("_CullModeForward",0);HDMaterial.ValidateMaterial(surface);
         glass=new VehicleMaterial(surface){Flags=VehicleMaterialFlags.Unpainted|VehicleMaterialFlags.DisableGrime|VehicleMaterialFlags.CustomShader};
         Plugin.Instance.Log.LogInfo("[FCS] User model loaded: 2492 triangles; original UVs, normals and origin retained.");
@@ -75,8 +75,19 @@ internal static class ConsoleAssets
         if(native.InteractionMesh!=mesh)
         {native.SetMesh(mesh!);native.SetShadowProxy(mesh!);native.SetInteractionMesh(mesh!);native.SetCollisionMesh(mesh!);}
         var materials=native.Materials;var paint=materials!=null && materials.Length>0 ? materials[0] : native.Material;
-        if(paint!=null && (materials==null || materials.Length!=2 || materials[1]?.Pointer!=glass!.Pointer))
-            native.SetMaterials(new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VehicleMaterial>(new[]{paint,glass!}));
+        if(housing==null)
+        {
+            var shader=Shader.Find("HDRP/Lit");if(shader==null)throw new InvalidOperationException("FCS housing shader unavailable");
+            var surface=new Material(shader){name="FCS clean housing",hideFlags=HideFlags.HideAndDontSave};
+            surface.SetColor("_BaseColor",new Color(.24f,.27f,.18f,1));
+            surface.SetFloat("_Smoothness",.25f);surface.SetFloat("_Metallic",0);
+            HDMaterial.SetSurfaceType(surface,false);
+            surface.SetFloat("_DoubleSidedEnable",1);surface.SetFloat("_DoubleSidedNormalMode",1);
+            surface.SetFloat("_CullMode",0);surface.SetFloat("_CullModeForward",0);HDMaterial.ValidateMaterial(surface);
+            housing=new VehicleMaterial(surface){Flags=VehicleMaterialFlags.Unpainted|VehicleMaterialFlags.DisableGrime|VehicleMaterialFlags.CustomShader};
+        }
+        if(materials==null || materials.Length!=2 || materials[0]?.Pointer!=housing.Pointer || materials[1]?.Pointer!=glass!.Pointer)
+            native.SetMaterials(new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VehicleMaterial>(new[]{housing,glass!}));
         if(appliedLogs<4){appliedLogs++;Plugin.Instance.Log.LogInfo($"[FCS] Native model applied; selection={model.PartType}; layer={model.InteractionCollider?.Layer}; meshMatch={native.InteractionMesh==mesh}");}
     }
     internal static void Tick()
@@ -100,3 +111,5 @@ internal static class ConsoleAssets
         catch(Exception ex){failed=true;Runtime.Warn("FCS visual unavailable: "+ex.Message);}
     }
 }
+
+

@@ -1,7 +1,5 @@
 bin/
 obj/
-backups/
-work/
-outputs/
+lib/
 *.dll
 *.pdb

@@ -19,7 +19,7 @@ using NativeScope = Sprocket.Vehicles.Weapons.Scope;
 
 namespace SprocketThermalSight;
 
-[BepInPlugin("sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.6")]
+[BepInPlugin("sprocket.thermalsight", "Sprocket Thermal Sight", "0.2.7")]
 [BepInDependency(Keybinds.PluginGuid, ">=0.1.6 <0.2.0")]
 public sealed class Plugin : BasePlugin
 {
@@ -365,6 +365,11 @@ internal static class Hooks
     private static void Cost(VehicleComponent __instance, MassType __0, CostType __1, ref float __result)
     { if ((__0 & MassType.Mechanisms) != 0 && (__1 & CostType.Assembly) != 0 && Runtime.FindProfile(__instance, out var p)) __result += p.ExtraAssemblyCost; }
 }
+
+
+
+
+
 
 
 

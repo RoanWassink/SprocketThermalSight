@@ -1,6 +1,16 @@
 # Sprocket Thermal Sight
 
-Thermal sights, rangefinders and fire-control sights for Sprocket 0.2.55.5. Version 0.2.6 adds thermal head models, separate optical/laser rangefinders, FCS links, a T-72-style sight and updated optical glass. See RELEASE-NOTES.md for changes from public 0.2.5.
+## New in 0.2.7
+
+- **TPD-K1 laser rangefinding gunner's sight:** the T72-style daylight sight now has blue-green and amber optical panes and an integrated manual laser rangefinder. Its tooltip identifies both functions.
+- **Corrected sight and FCS models:** updated creator-supplied meshes fix facing/orientation and surface appearance.
+
+Fit the TPD-K1 as your sight and use the shared **Measure range** action from Settings/keybinds. No separate laser device is needed for this sight. It remains a daylight optic; fitting it does not add thermal vision or automatic ballistic ranging. Other rangefinder and thermal functions remain available as before.
+
+**Wolfosito** created the T72 gunner sight and FCS models.
+
+
+Thermal sights, rangefinders and fire-control sights for Sprocket 0.2.55.5. Version 0.2.7 adds the TPD-K1 integrated manual rangefinder and corrected models. Separate optical/laser equipment, FCS links and thermal profiles remain available.
 
 ## Requirements
 
@@ -18,7 +28,7 @@ Place an internal **FCS** within the gunner's normal operating reach. Link one o
 
 A fitted rangefinder provides measurements through any active sight on the same vehicle. The optical coincidence model takes longer and rounds readings more coarsely; its length affects the reading precision. The manual laser gives a reading, while the automatic laser also sets the aim range using the selected shell's ballistics, including APFSDS. Gun-launched guided missiles do not need ballistic ranging. These are gameplay aids, not guaranteed accuracy for every weapon and moving target.
 
-The **Sights and electronics** menu contains the FCS, thermal heads, rangefinders, **T72 style sight**, and decorative scalable clear, tinted and yellow window panes. The panes can be used independently; they do not add thermal or rangefinding functionality. Build your own outer structures around the generic sensor models.
+The **Sights and electronics** menu contains the FCS, thermal heads, rangefinders, **TPD-K1 gunner sight**, and decorative scalable clear, tinted and yellow window panes. The panes can be used independently; they do not add thermal or rangefinding functionality. Build your own outer structures around the generic sensor models.
 
 ## Use
 

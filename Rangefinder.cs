@@ -66,7 +66,7 @@ internal static class Rangefinder
         measure = Keybinds.RegisterButton(Owner, "Thermal", "rangefinder-measure", "Measure range", "");
         ready = true;
     }
-    internal static bool Own(VehicleComponent? component) => RangefinderDevicePolicy.Kind(component?.ComponentID) != RangefinderKind.None;
+    internal static bool Own(VehicleComponent? component) => RangefinderDevicePolicy.IsStandalone(component?.ComponentID);
     internal static void Observe(PlayerController controller, GameTime gameTime)
     { player = controller; time = gameTime; frame = Time.frameCount; }
     private static GunnerSight? Current()
@@ -240,6 +240,7 @@ internal static class RangefinderHooks
         catch (Exception ex) { Rangefinder.Fail(ex); }
     }
 }
+
 
 
 

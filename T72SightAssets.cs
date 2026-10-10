@@ -12,6 +12,7 @@ internal static class T72SightAssets
     private static bool Own(VehicleComponent c)=>c.TryCast<VehicleObjectModel>()?.VehicleObject?.GetBehaviour<Sprocket.Vehicles.AttachedBehaviours.GunnerSight>()?.ComponentID=="t72StyleSight";
     private static Mesh? mesh;
     private static VehicleMaterial? glass;
+    private static VehicleMaterial? amberGlass;
     private static VehicleMaterial? housing;
     private static float scanAt;
     private static bool failed;
@@ -37,7 +38,7 @@ internal static class T72SightAssets
         if(mesh!=null)return;
         var positions=new List<Vector3>();var texcoords=new List<Vector2>();var sourceNormals=new List<Vector3>();
         var vertices=new List<Vector3>();var uv=new List<Vector2>();var normals=new List<Vector3>();
-        var faces=new[]{new List<int>(),new List<int>()};int material=0;
+        var faces=new[]{new List<int>(),new List<int>(),new List<int>()};int material=0;
         float F(string text)=>float.Parse(text,CultureInfo.InvariantCulture);
         foreach(var line in File.ReadLines(Asset("t72-style-sight.obj")))
         {
@@ -45,7 +46,7 @@ internal static class T72SightAssets
             if(f[0]=="v" && f.Length==4)positions.Add(new Vector3(F(f[1]),F(f[2]),F(f[3])));
             else if(f[0]=="vt" && f.Length>=3)texcoords.Add(new Vector2(F(f[1]),F(f[2])));
             else if(f[0]=="vn" && f.Length==4)sourceNormals.Add(new Vector3(F(f[1]),F(f[2]),F(f[3])));
-            else if(f[0]=="usemtl" && f.Length==2)material=f[1] switch{"Housing"=>0,"Glass"=>1,_=>throw new InvalidDataException("Unknown FCS surface")};
+            else if(f[0]=="usemtl" && f.Length==2)material=f[1] switch{"Housing"=>0,"Glass"=>1,"AmberGlass"=>2,_=>throw new InvalidDataException("Unknown FCS surface")};
             else if(f[0]=="f")
             {
                 if(f.Length!=4)throw new InvalidDataException("FCS must be triangulated");
@@ -58,17 +59,19 @@ internal static class T72SightAssets
                 }
             }
         }
-        if(positions.Count!=1623 || vertices.Count!=1014 || faces.Any(f=>f.Count==0) || vertices.Any(v=>!float.IsFinite(v.x)||!float.IsFinite(v.y)||!float.IsFinite(v.z)))throw new InvalidDataException("Unexpected FCS model geometry");
-        mesh=new Mesh{name="T72 style sight",hideFlags=HideFlags.HideAndDontSave};mesh.vertices=vertices.ToArray();mesh.uv=uv.ToArray();mesh.normals=normals.ToArray();mesh.subMeshCount=2;
-        for(int i=0;i<2;i++)mesh.SetTriangles(faces[i].ToArray(),i);mesh.RecalculateBounds();
+        if(positions.Count!=1731 || vertices.Count!=1056 || faces.Any(f=>f.Count==0) || vertices.Any(v=>!float.IsFinite(v.x)||!float.IsFinite(v.y)||!float.IsFinite(v.z)))throw new InvalidDataException("Unexpected FCS model geometry");
+        mesh=new Mesh{name="TPD-K1 gunner sight",hideFlags=HideFlags.HideAndDontSave};mesh.vertices=vertices.ToArray();mesh.uv=uv.ToArray();mesh.normals=normals.ToArray();mesh.subMeshCount=3;
+        for(int i=0;i<3;i++)mesh.SetTriangles(faces[i].ToArray(),i);mesh.RecalculateBounds();
         var shader=Shader.Find("HDRP/Lit");if(shader==null)throw new InvalidOperationException("FCS shader unavailable");
         var surface=new Material(shader){name="FCS eyepiece glass",hideFlags=HideFlags.HideAndDontSave};
-        surface.SetColor("_BaseColor",new Color(.018f,.028f,.025f,1));surface.SetFloat("_Smoothness",.92f);
-        // The supplied LENS export includes inward-facing housing faces. Render
-        // both sides without changing the author's mesh or normals.
+        surface.SetColor("_BaseColor",new Color(.035f,.14f,.15f,1));surface.SetFloat("_Smoothness",.92f);
+        // Render the optical surface from either side.
         surface.SetFloat("_DoubleSidedEnable",1);surface.SetFloat("_CullMode",0);surface.SetFloat("_CullModeForward",0);HDMaterial.ValidateMaterial(surface);
         glass=new VehicleMaterial(surface){Flags=VehicleMaterialFlags.Unpainted|VehicleMaterialFlags.DisableGrime|VehicleMaterialFlags.CustomShader};
-        Plugin.Instance.Log.LogInfo("[T72 sight] User model loaded: 338 triangles; original dimensions retained; mounting frame aligned to +Z.");
+        var amber=new Material(surface){name="TPD-K1 amber optical glass",hideFlags=HideFlags.HideAndDontSave};
+        amber.SetColor("_BaseColor",new Color(.32f,.20f,.035f,1));HDMaterial.ValidateMaterial(amber);
+        amberGlass=new VehicleMaterial(amber){Flags=VehicleMaterialFlags.Unpainted|VehicleMaterialFlags.DisableGrime|VehicleMaterialFlags.CustomShader};
+        Plugin.Instance.Log.LogInfo("[T72 sight] User model loaded: 352 triangles; original dimensions retained; mounting frame aligned to +Z.");
     }
     private static void Apply(VehicleObjectModel model)
     {
@@ -94,8 +97,8 @@ internal static class T72SightAssets
             housing=new VehicleMaterial(surface){Flags=VehicleMaterialFlags.Unpainted|VehicleMaterialFlags.DisableGrime|VehicleMaterialFlags.CustomShader};
             Plugin.Instance.Log.LogInfo("[T72 sight] Clean opaque housing; original front optical pane uses glass; shader="+surface.shader.name);
         }
-        if(housing!=null && (materials==null || materials.Length!=2 || materials[0]?.Pointer!=housing.Pointer || materials[1]?.Pointer!=glass!.Pointer))
-            native.SetMaterials(new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VehicleMaterial>(new[]{housing,glass!}));
+        if(housing!=null && (materials==null || materials.Length!=3 || materials[0]?.Pointer!=housing.Pointer || materials[1]?.Pointer!=glass!.Pointer || materials[2]?.Pointer!=amberGlass!.Pointer))
+            native.SetMaterials(new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<VehicleMaterial>(new[]{housing,glass!,amberGlass!}));
         if(appliedLogs<4){appliedLogs++;Plugin.Instance.Log.LogInfo($"[T72 sight] Native model applied; selection={model.PartType}; layer={model.InteractionCollider?.Layer}; meshMatch={native.InteractionMesh==mesh}");}
     }
     internal static void Tick()
@@ -119,3 +122,7 @@ internal static class T72SightAssets
         catch(Exception ex){failed=true;Runtime.Warn("T72 sight visual unavailable: "+ex.Message);}
     }
 }
+
+
+
+

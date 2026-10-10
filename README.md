@@ -1,5 +1,7 @@
 # Sprocket Thermal Sight
 
+<!-- sp-compat {"hamish.sprocket": ">=0.2.55.5", "bepinex.bepinex": "6.0.0-be.788"} -->
+
 ## New in 0.2.7
 
 - **TPD-K1 laser rangefinding gunner's sight:** the T72-style daylight sight now has blue-green and amber optical panes and an integrated manual laser rangefinder. Its tooltip identifies both functions.
